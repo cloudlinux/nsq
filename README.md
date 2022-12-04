@@ -1,3 +1,7 @@
+**This fork of https://github.com/nsqio/nsq ads parameter _-MaxDepth_ that limits amount of messages save on disk per topic.
+Once the limit is reached, new messages will not be accepted by that topic**
+
+
 <p align="center">
 <img align="left" width="175" src="https://nsq.io/static/img/nsq_blue.png">
 <ul>

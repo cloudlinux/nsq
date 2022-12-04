@@ -60,6 +60,7 @@ func (d *errorBackendQueue) Close() error            { return nil }
 func (d *errorBackendQueue) Delete() error           { return nil }
 func (d *errorBackendQueue) Depth() int64            { return 0 }
 func (d *errorBackendQueue) Empty() error            { return nil }
+func (d *errorBackendQueue) IsFull() bool            { return true }
 
 type errorRecoveredBackendQueue struct{ errorBackendQueue }
 

@@ -34,6 +34,7 @@ type Options struct {
 	DataPath        string        `flag:"data-path"`
 	MemQueueSize    int64         `flag:"mem-queue-size"`
 	MaxBytesPerFile int64         `flag:"max-bytes-per-file"`
+	MaxDepth        int64         `flag:"max-depth"`
 	SyncEvery       int64         `flag:"sync-every"`
 	SyncTimeout     time.Duration `flag:"sync-timeout"`
 
@@ -116,6 +117,7 @@ func NewOptions() *Options {
 
 		MemQueueSize:    10000,
 		MaxBytesPerFile: 100 * 1024 * 1024,
+		MaxDepth:        0, //no max depth per queue
 		SyncEvery:       2500,
 		SyncTimeout:     2 * time.Second,
 

@@ -145,6 +145,7 @@ func nsqdFlagSet(opts *nsqd.Options) *flag.FlagSet {
 	flagSet.String("data-path", opts.DataPath, "path to store disk-backed messages")
 	flagSet.Int64("mem-queue-size", opts.MemQueueSize, "number of messages to keep in memory (per topic/channel)")
 	flagSet.Int64("max-bytes-per-file", opts.MaxBytesPerFile, "number of bytes per diskqueue file before rolling")
+	flagSet.Int64("max-depth", opts.MaxDepth, "number of messages per diskqueue before queue stops accepting new messages")
 	flagSet.Int64("sync-every", opts.SyncEvery, "number of messages per diskqueue fsync")
 	flagSet.Duration("sync-timeout", opts.SyncTimeout, "duration of time per diskqueue fsync")
 

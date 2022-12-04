@@ -9,4 +9,5 @@ type BackendQueue interface {
 	Delete() error
 	Depth() int64
 	Empty() error
+	IsFull() bool
 }

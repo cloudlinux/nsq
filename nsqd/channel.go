@@ -114,6 +114,7 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 			int32(nsqd.getOpts().MaxMsgSize)+minValidMsgLength,
 			nsqd.getOpts().SyncEvery,
 			nsqd.getOpts().SyncTimeout,
+			nsqd.getOpts().MaxDepth,
 			dqLogf,
 		)
 	}
