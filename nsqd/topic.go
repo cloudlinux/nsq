@@ -45,10 +45,15 @@ type Topic struct {
 
 // Topic constructor
 func NewTopic(topicName string, nsqd *NSQD, deleteCallback func(*Topic)) *Topic {
+	// channels with a #ordered prefix have mem-queue size of 0
+	memQueueSize := nsqd.getOpts().MemQueueSize
+	if strings.HasSuffix(topicName, "_ordered") {
+		memQueueSize = 0
+	}
 	t := &Topic{
 		name:              topicName,
 		channelMap:        make(map[string]*Channel),
-		memoryMsgChan:     make(chan *Message, nsqd.getOpts().MemQueueSize),
+		memoryMsgChan:     make(chan *Message, memQueueSize),
 		startChan:         make(chan int, 1),
 		exitChan:          make(chan int),
 		channelUpdateChan: make(chan int),

@@ -56,6 +56,7 @@ type Channel struct {
 	clients        map[int64]Consumer
 	paused         int32
 	ephemeral      bool
+	memQueueSize   int64
 	deleteCallback func(*Channel)
 	deleter        sync.Once
 
@@ -84,9 +85,14 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 		nsqd:           nsqd,
 		ephemeral:      strings.HasSuffix(channelName, "#ephemeral"),
 	}
+	// channels with a #ordered prefix have mem-queue size of 0
+	c.memQueueSize = nsqd.getOpts().MemQueueSize
+	if strings.HasSuffix(topicName, "_ordered") {
+		c.memQueueSize = 0
+	}
 	// avoid mem-queue if size == 0 for more consistent ordering
-	if nsqd.getOpts().MemQueueSize > 0 || c.ephemeral {
-		c.memoryMsgChan = make(chan *Message, nsqd.getOpts().MemQueueSize)
+	if c.memQueueSize > 0 || c.ephemeral {
+		c.memoryMsgChan = make(chan *Message, c.memQueueSize)
 	}
 	if len(nsqd.getOpts().E2EProcessingLatencyPercentiles) > 0 {
 		c.e2eProcessingLatencyStream = quantile.New(
@@ -125,7 +131,7 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 }
 
 func (c *Channel) initPQ() {
-	pqSize := int(math.Max(1, float64(c.nsqd.getOpts().MemQueueSize)/10))
+	pqSize := int(math.Max(1, float64(c.memQueueSize)/10))
 
 	c.inFlightMutex.Lock()
 	c.inFlightMessages = make(map[MessageID]*Message)
