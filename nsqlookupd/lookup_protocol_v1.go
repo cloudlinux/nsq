@@ -112,11 +112,11 @@ func getTopicChan(command string, params []string) (string, string, error) {
 	}
 
 	if !protocol.IsValidTopicName(topicName) {
-		return "", "", protocol.NewFatalClientErr(nil, "E_BAD_TOPIC", fmt.Sprintf(`%s topic name '%s' is not valid`, command, topicName))
+		return "", "", protocol.NewFatalClientErr(nil, "E_BAD_TOPIC", fmt.Sprintf(`%s topic name "%s" is not valid`, command, topicName))
 	}
 
 	if channelName != "" && !protocol.IsValidChannelName(channelName) {
-		return "", "", protocol.NewFatalClientErr(nil, "E_BAD_CHANNEL", fmt.Sprintf(`%s channel name '%s' is not valid`, command, channelName))
+		return "", "", protocol.NewFatalClientErr(nil, "E_BAD_CHANNEL", fmt.Sprintf(`%s channel name "%s" is not valid`, command, channelName))
 	}
 
 	return topicName, channelName, nil
