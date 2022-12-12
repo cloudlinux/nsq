@@ -106,12 +106,13 @@ func isSocket(channelName string) bool {
 
 func (w *wakeup) up(channelName string) error {
 	socketPath := path.Join(socketDir, channelName)
-	w.RLock()
-	defer w.RUnlock()
+	w.Lock()
+	defer w.Unlock()
 	err := openConnect(socketPath)
 	if err != nil {
 		return err
 	}
+	// TODO: unset stateInit after timeout when client won't connect
 	w.channels.Store(channelName, stateInit)
 	return nil
 }
