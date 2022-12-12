@@ -635,6 +635,7 @@ func (p *protocolV2) SUB(client *clientV2, params [][]byte) ([]byte, error) {
 	// update message pump
 	client.SubEventChan <- channel
 
+	client.nsqd.wakeup.Connected(channel.name)
 	return okBytes, nil
 }
 
@@ -754,6 +755,7 @@ func (p *protocolV2) CLS(client *clientV2, params [][]byte) ([]byte, error) {
 	}
 
 	client.StartClose()
+	client.nsqd.wakeup.Disconnected(client.Channel.name)
 
 	return []byte("CLOSE_WAIT"), nil
 }

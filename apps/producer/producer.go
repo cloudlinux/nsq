@@ -14,7 +14,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	topicName := "new8_ordered"
+	topicName := "new8#ordered"
 
 	for i := 0; i < 10; i++ {
 		// Synchronously publish a single message to the specified topic.

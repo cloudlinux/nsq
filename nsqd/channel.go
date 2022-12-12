@@ -85,9 +85,9 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 		nsqd:           nsqd,
 		ephemeral:      strings.HasSuffix(channelName, "#ephemeral"),
 	}
-	// channels with a #ordered prefix have mem-queue size of 0
+	// channels with a #ordered suffix have mem-queue size of 0
 	c.memQueueSize = nsqd.getOpts().MemQueueSize
-	if strings.HasSuffix(topicName, "_ordered") {
+	if strings.HasSuffix(topicName, "#ordered") {
 		c.memQueueSize = 0
 	}
 	// avoid mem-queue if size == 0 for more consistent ordering

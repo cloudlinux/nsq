@@ -70,6 +70,8 @@ type NSQD struct {
 	exitChan             chan int
 	waitGroup            util.WaitGroupWrapper
 
+	wakeup WakeUp
+
 	ci *clusterinfo.ClusterInfo
 }
 
@@ -171,6 +173,7 @@ func New(opts *Options) (*NSQD, error) {
 		}
 		opts.StatsdPrefix = prefixWithHost
 	}
+	n.wakeup = newWakeup(n)
 
 	return n, nil
 }
@@ -270,6 +273,7 @@ func (n *NSQD) Main() error {
 	if n.getOpts().StatsdAddress != "" {
 		n.waitGroup.Wrap(n.statsdLoop)
 	}
+	n.waitGroup.Wrap(n.wakeup.Loop)
 
 	err := <-exitCh
 	return err

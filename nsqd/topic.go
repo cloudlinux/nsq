@@ -45,9 +45,9 @@ type Topic struct {
 
 // Topic constructor
 func NewTopic(topicName string, nsqd *NSQD, deleteCallback func(*Topic)) *Topic {
-	// channels with a #ordered prefix have mem-queue size of 0
+	// topics with a #ordered suffix have mem-queue size of 0
 	memQueueSize := nsqd.getOpts().MemQueueSize
-	if strings.HasSuffix(topicName, "_ordered") {
+	if strings.HasSuffix(topicName, "#ordered") {
 		memQueueSize = 0
 	}
 	t := &Topic{
@@ -247,6 +247,10 @@ func (t *Topic) PutMessages(msgs []*Message) error {
 }
 
 func (t *Topic) put(m *Message) error {
+	defer func() {
+		t.nsqd.wakeup.NewMessageInTopic(t.name)
+	}()
+
 	// If mem-queue-size == 0, avoid memory chan, for more consistent ordering,
 	// but try to use memory chan for deferred messages (they lose deferred timer
 	// in backend queue) or if topic is ephemeral (there is no backend queue).
