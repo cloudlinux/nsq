@@ -74,10 +74,10 @@ func (w *wakeup) Loop() {
 				value, ok := w.channels.Load(channel.name)
 				if ok {
 					if value == stateSubscribed {
-						w.nsqd.logf(LOG_DEBUG, "consumer already connected: %s", channel.name)
+						w.nsqd.logf(LOG_WARN, "consumer already connected: %s", channel.name)
 						continue
 					} else if value == stateInit {
-						w.nsqd.logf(LOG_DEBUG, "consumer already launched: %s", channel.name)
+						w.nsqd.logf(LOG_WARN, "consumer already launched: %s", channel.name)
 						continue
 					}
 				}
@@ -85,7 +85,7 @@ func (w *wakeup) Loop() {
 				w.nsqd.logf(LOG_DEBUG, "wakeup client: %s", channel.name)
 				err := w.up(channel.name)
 				if err != nil {
-					w.nsqd.logf(LOG_DEBUG, "failed to connect to %s: %s", channel.name, err)
+					w.nsqd.logf(LOG_ERROR, "failed to connect to %s: %s", channel.name, err)
 					continue
 				}
 			}
