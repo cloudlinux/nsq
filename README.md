@@ -1,5 +1,7 @@
-**This fork of https://github.com/nsqio/nsq ads parameter _-MaxDepth_ that limits amount of messages save on disk per topic.
-Once the limit is reached, new messages will not be accepted by that topic**
+**This fork of https://github.com/nsqio/nsq**:
+- ads parameter _-MaxDepth_ that limits amount of messages save on disk per topic.
+Once the limit is reached, new messages will not be accepted by that topic
+- ads feature to wake up consumers (just open connect to unix socket for systemd activation) when new messages are available
 
 
 <p align="center">
