@@ -11,7 +11,7 @@ import (
 const socketDir = "/run"
 
 type WakeUp interface {
-	NewMessageInTopic(topicName string)
+	NewMessageInTopic(topic *Topic)
 	Connected(channelName string)
 	Disconnected(channelName string)
 	Loop()
@@ -21,7 +21,7 @@ type wakeup struct {
 	sync.RWMutex
 
 	channels       sync.Map
-	newMessageChan chan string
+	newMessageChan chan *Topic
 	nsqd           *NSQD
 }
 
@@ -29,14 +29,14 @@ var _ WakeUp = &wakeup{}
 
 func newWakeup(nsqd *NSQD) WakeUp {
 	return &wakeup{
-		newMessageChan: make(chan string, 10),
+		newMessageChan: make(chan *Topic),
 		nsqd:           nsqd,
 	}
 }
 
-func (w *wakeup) NewMessageInTopic(topicName string) {
-	w.nsqd.logf(LOG_DEBUG, "new message in topic: %s", topicName)
-	w.newMessageChan <- topicName
+func (w *wakeup) NewMessageInTopic(topic *Topic) {
+	w.nsqd.logf(LOG_DEBUG, "new message in topic: %s", topic.name)
+	w.newMessageChan <- topic
 }
 
 func (w *wakeup) Connected(channelName string) {
@@ -50,21 +50,23 @@ func (w *wakeup) Disconnected(channelName string) {
 }
 
 func (w *wakeup) Loop() {
-	var topicName string
+	var topic *Topic
 	w.nsqd.logf(LOG_DEBUG, "wakeup loop is running...")
 	for {
 		select {
 		case <-w.nsqd.exitChan:
 			goto exit
-		case topicName = <-w.newMessageChan:
-			w.nsqd.logf(LOG_DEBUG, "new message in topic received: %s", topicName)
-			//topic := w.nsqd.GetTopic(topicName) <- stucks the tests randomly, deadlock appears
+		case topic = <-w.newMessageChan:
+			w.nsqd.logf(LOG_DEBUG, "new message in topic received: %s", topic.name)
 
-			topic, ok := w.nsqd.topicMap[topicName]
-			if !ok {
-				continue // topic might be deleted
-			}
+			topic.RLock()
+			var channels []*Channel
 			for _, channel := range topic.channelMap {
+				channels = append(channels, channel)
+			}
+			topic.RUnlock()
+
+			for _, channel := range channels {
 				if !isSocket(channel.name) {
 					continue
 				}

@@ -248,7 +248,7 @@ func (t *Topic) PutMessages(msgs []*Message) error {
 
 func (t *Topic) put(m *Message) error {
 	defer func() {
-		t.nsqd.wakeup.NewMessageInTopic(t.name)
+		go t.nsqd.wakeup.NewMessageInTopic(t)
 	}()
 
 	// If mem-queue-size == 0, avoid memory chan, for more consistent ordering,
