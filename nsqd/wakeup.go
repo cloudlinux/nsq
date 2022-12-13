@@ -30,8 +30,6 @@ type WakeUp interface {
 }
 
 type wakeup struct {
-	sync.RWMutex
-
 	channels       sync.Map
 	newMessageChan chan string
 	nsqd           *NSQD

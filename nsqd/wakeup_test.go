@@ -144,16 +144,17 @@ func TestWakeupWithBrokenSocket(t *testing.T) {
 	defer os.RemoveAll(opts.DataPath)
 	defer nsqd.Exit()
 
+	wakeupTested := nsqd.wakeup.(*wakeup)
+
 	testSock := "/run/test.sock"
 	defer os.Remove(testSock)
 
 	topicName := "test_wakeup" + strconv.Itoa(int(time.Now().Unix()))
 	topic := nsqd.GetTopic(topicName)
 
+	channelName := path.Base(testSock)
 	// create channel
-	_ = topic.GetChannel(path.Base(testSock))
-
-	msg := NewMessage(topic.GenerateID(), []byte("test body"))
+	_ = topic.GetChannel(channelName)
 
 	l, err := net.Listen("unix", testSock)
 	test.Nil(t, err)
@@ -161,35 +162,87 @@ func TestWakeupWithBrokenSocket(t *testing.T) {
 	listener, ok := l.(*net.UnixListener)
 	test.Equal(t, ok, true)
 	listener.SetUnlinkOnClose(false)
-	listener.Close() // close explicitly to prevent new connections
+	err = listener.Close() // close explicitly to prevent new connections
+	test.Nil(t, err)
 
-	t.Log("sending message with broken socket")
-	topic.PutMessage(msg)
+	err = topic.PutMessage(NewMessage(topic.GenerateID(), []byte("test body")))
+	test.Nil(t, err)
 
+	t.Log("sending message to broken socket")
 	wg := util.WaitGroupWrapper{}
 	wg.Wrap(func() {
-		err := acceptConnection(l)
+		err := acceptConnection(listener)
 		test.NotNil(t, err)
 		test.Equal(t, err.Error(), noConnErrr.Error())
 	})
-	timedout := waitTimeout(&wg, 50*time.Millisecond)
+	timedout := waitTimeout(&wg, 100*time.Millisecond)
 	test.Equal(t, timedout, false)
+
+	// waiting the message to be processed
+	wg.Wrap(func() {
+		for {
+			_, ok := wakeupTested.channels.Load(channelName)
+			if ok {
+				break
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	})
+	timedout = waitTimeout(&wg, 100*time.Millisecond)
+	test.Equal(t, timedout, false)
+
+	v, ok := wakeupTested.channels.Load(channelName)
+	test.Equal(t, ok, true)
+	test.Equal(t, v.(state).status, statusStartError)
+
+	t.Log("sending message to ready socket before timeout")
 	err = os.Remove(testSock)
 	test.Nil(t, err)
 
-	t.Log("sending message with no luck, preventing due to statusStartError")
-	l2, err := net.Listen("unix", testSock)
+	err = topic.PutMessage(NewMessage(topic.GenerateID(), []byte("test body")))
 	test.Nil(t, err)
 
-	wg = util.WaitGroupWrapper{}
-	wg.Wrap(func() {
-		err := acceptConnection(l2)
+	l1, err := net.Listen("unix", testSock)
+	test.Nil(t, err)
+	defer l1.Close()
+
+	wg1 := util.WaitGroupWrapper{}
+	wg1.Wrap(func() {
+		err := acceptConnection(l1)
 		test.NotNil(t, err)
 		test.Equal(t, err.Error(), noConnErrr.Error())
 	})
-	topic.PutMessage(msg)
-	timedout = waitTimeout(&wg, time.Millisecond)
+	timedout = waitTimeout(&wg1, 50*time.Millisecond)
 	test.Equal(t, timedout, true)
+	newValue, ok := wakeupTested.channels.Load(channelName)
+	test.Equal(t, ok, true)
+	test.Equal(t, v, newValue) // value should not be changed
+
+	t.Log("sending message to ready socket after timeout")
+	err = os.Remove(testSock)
+	test.Nil(t, err)
+	time.Sleep(startupTimeout)
+
+	l2, err := net.Listen("unix", testSock)
+	test.Nil(t, err)
+	defer l2.Close()
+
+	err = topic.PutMessage(NewMessage(topic.GenerateID(), []byte("test body")))
+	test.Nil(t, err)
+
+	wg2 := util.WaitGroupWrapper{}
+	wg2.Wrap(func() {
+		err := acceptConnection(l2)
+		test.Nil(t, err)
+	})
+	timedout = waitTimeout(&wg2, 500*time.Millisecond)
+	test.Equal(t, timedout, false)
+
+	v, ok = wakeupTested.channels.Load(channelName)
+
+	test.Equal(t, ok, true)
+	test.Equal(t, v.(state).status, statusInit) // means that service is launched
+
 }
 
 func acceptConnection(l net.Listener) error {
