@@ -10,8 +10,16 @@ import (
 )
 
 const (
-	socketDir         = "/run"
-	connectionTimeout = 5 * time.Second
+	socketDir = "/run"
+
+	statusInit = iota
+	statusConnected
+	statusDisconnected
+	statusStartError
+
+	socketConnectionTimeout   = 5 * time.Second
+	consumerConnectionTimeout = 30 * time.Second
+	startupTimeout            = time.Second
 )
 
 type WakeUp interface {
@@ -29,6 +37,11 @@ type wakeup struct {
 	nsqd           *NSQD
 }
 
+type state struct {
+	status  int
+	timeout time.Time
+}
+
 func newWakeup(nsqd *NSQD) WakeUp {
 	return &wakeup{
 		newMessageChan: make(chan string, 100),
@@ -42,12 +55,25 @@ func (w *wakeup) NewMessageInChannel(channelName string) {
 
 func (w *wakeup) Connected(channelName string) {
 	w.nsqd.logf(LOG_DEBUG, "client is connected: %s", channelName)
-	w.channels.Store(channelName, stateSubscribed)
+	w.channels.Store(channelName, state{
+		status:  statusConnected,
+		timeout: time.Now(),
+	})
 }
 
 func (w *wakeup) Disconnected(channelName string) {
 	w.nsqd.logf(LOG_DEBUG, "client is disconnected: %s", channelName)
-	w.channels.Store(channelName, stateClosing)
+	w.channels.Store(channelName, state{
+		status:  statusDisconnected,
+		timeout: time.Now(),
+	})
+}
+
+func (w *wakeup) setState(channelName string, status int) {
+	w.channels.Store(channelName, state{
+		status:  status,
+		timeout: time.Now(),
+	})
 }
 
 func (w *wakeup) Loop() {
@@ -66,24 +92,32 @@ func (w *wakeup) Loop() {
 
 			value, ok := w.channels.Load(channelName)
 			if ok {
-				if value == stateSubscribed {
+				s, ok := value.(state)
+				if !ok {
+					w.nsqd.logf(LOG_ERROR, "invalid state for channel %s", channelName)
+					continue
+				}
+				if s.status == statusConnected {
 					w.nsqd.logf(LOG_WARN, "consumer already connected: %s", channelName)
 					continue
-				} else if value == stateInit {
+				} else if s.status == statusInit && time.Now().Sub(s.timeout) < consumerConnectionTimeout {
 					w.nsqd.logf(LOG_WARN, "consumer already launched: %s", channelName)
+					continue
+				} else if s.status == statusStartError && time.Now().Sub(s.timeout) < startupTimeout {
+					w.nsqd.logf(LOG_WARN, "consumer failed, waiting %s: %s", channelName, startupTimeout)
 					continue
 				}
 			}
 
-			w.nsqd.logf(LOG_DEBUG, "starting client: %s", channelName)
+			w.nsqd.logf(LOG_INFO, "starting client: %s", channelName)
 			err := w.up(channelName)
 			if err != nil {
+				w.setState(channelName, statusStartError)
 				w.nsqd.logf(LOG_ERROR, "failed to connect to %s: %s", channelName, err)
 				continue
 			}
 			w.nsqd.logf(LOG_INFO, "client is launched: %s", channelName)
 		}
-		time.Sleep(500 * time.Millisecond)
 	}
 exit:
 	close(w.newMessageChan)
@@ -106,13 +140,12 @@ func (w *wakeup) up(channelName string) error {
 	if err != nil {
 		return err
 	}
-	// TODO: unset stateInit after timeout when client won't connect
-	w.channels.Store(channelName, stateInit)
+	w.setState(channelName, statusInit)
 	return nil
 }
 
 func openConnect(addr string) error {
-	conn, err := net.DialTimeout("unix", addr, connectionTimeout)
+	conn, err := net.DialTimeout("unix", addr, socketConnectionTimeout)
 	if err != nil {
 		return err
 	}

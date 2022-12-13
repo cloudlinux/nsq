@@ -14,6 +14,8 @@ import (
 	"github.com/nsqio/nsq/internal/util"
 )
 
+var noConnErrr = errors.New("accept unix /run/test.sock: use of closed network connection")
+
 func TestWakeupSuccessfully(t *testing.T) {
 	opts := NewOptions()
 	opts.Logger = test.NewTestLogger(t)
@@ -31,9 +33,7 @@ func TestWakeupSuccessfully(t *testing.T) {
 	_ = topic.GetChannel(path.Base(testSock))
 
 	l, err := net.Listen("unix", testSock)
-	if err != nil {
-		t.Fatal(err)
-	}
+	test.Nil(t, err)
 	defer l.Close()
 
 	var id MessageID
@@ -42,14 +42,23 @@ func TestWakeupSuccessfully(t *testing.T) {
 
 	wg := util.WaitGroupWrapper{}
 	wg.Wrap(func() {
-		if err := acceptConnection(l); err != nil {
-			t.Fatal(err)
-		}
+		err = acceptConnection(l)
+		test.Nil(t, err)
 	})
 	timedout := waitTimeout(&wg, 50*time.Millisecond)
-	if timedout {
-		t.Fatal("timed out waiting for connection")
-	}
+	test.Equal(t, timedout, false)
+
+	// second time no wakeup should happen
+	_ = topic.PutMessage(msg)
+
+	wg = util.WaitGroupWrapper{}
+	wg.Wrap(func() {
+		err := acceptConnection(l)
+		test.Equal(t, err.Error(), noConnErrr.Error())
+	})
+
+	timedout = waitTimeout(&wg, 50*time.Millisecond)
+	test.Equal(t, timedout, true)
 }
 
 func TestWakeupWithoutRightClient(t *testing.T) {
@@ -62,16 +71,14 @@ func TestWakeupWithoutRightClient(t *testing.T) {
 	topicName := "test_wakeup" + strconv.Itoa(int(time.Now().Unix()))
 	topic := nsqd.GetTopic(topicName)
 
-	testSock := "/run/test.sock"
-	defer os.Remove(testSock)
-
 	// create channel
 	_ = topic.GetChannel("different-channel-name")
 
+	testSock := "/run/test.sock"
+	defer os.Remove(testSock)
+
 	l, err := net.Listen("unix", testSock)
-	if err != nil {
-		t.Fatal(err)
-	}
+	test.Nil(t, err)
 	defer l.Close()
 
 	var id MessageID
@@ -80,19 +87,11 @@ func TestWakeupWithoutRightClient(t *testing.T) {
 
 	wg := util.WaitGroupWrapper{}
 	wg.Wrap(func() {
-		if err := acceptConnection(l); err != nil {
-			if err.Error() == "accept unix /run/test.sock: use of closed network connection" {
-				// expected error
-				return
-			} else {
-				t.Fatal(err)
-			}
-		}
+		err := acceptConnection(l)
+		test.Equal(t, err.Error(), noConnErrr.Error())
 	})
 	timedout := waitTimeout(&wg, time.Second)
-	if !timedout {
-		t.Fatal("expected timeout, should not have accepted connection")
-	}
+	test.Equal(t, timedout, true)
 }
 
 func TestWakeupWithConnectedClient(t *testing.T) {
@@ -126,26 +125,71 @@ func TestWakeupWithConnectedClient(t *testing.T) {
 	test.Nil(t, err)
 
 	l, err := net.Listen("unix", testSock)
-	if err != nil {
-		t.Fatal(err)
-	}
+	test.Nil(t, err)
 	defer l.Close()
 
 	wg := util.WaitGroupWrapper{}
 	wg.Wrap(func() {
-		if err := acceptConnection(l); err != nil {
-			if err.Error() == "accept unix /run/test.sock: use of closed network connection" {
-				// expected error
-				return
-			} else {
-				t.Fatal(err)
-			}
-		}
+		err := acceptConnection(l)
+		test.Equal(t, err.Error(), noConnErrr.Error())
 	})
-	timedout := waitTimeout(&wg, time.Second)
-	if !timedout {
-		t.Fatal("expected timeout, should not have accepted connection")
-	}
+	timedout := waitTimeout(&wg, 50*time.Millisecond)
+	test.Equal(t, timedout, true)
+}
+
+func TestWakeupWithBrokenSocket(t *testing.T) {
+	opts := NewOptions()
+	opts.Logger = test.NewTestLogger(t)
+	_, _, nsqd := mustStartNSQD(opts)
+	defer os.RemoveAll(opts.DataPath)
+	defer nsqd.Exit()
+
+	testSock := "/run/test.sock"
+	defer os.Remove(testSock)
+
+	topicName := "test_wakeup" + strconv.Itoa(int(time.Now().Unix()))
+	topic := nsqd.GetTopic(topicName)
+
+	// create channel
+	_ = topic.GetChannel(path.Base(testSock))
+
+	msg := NewMessage(topic.GenerateID(), []byte("test body"))
+
+	l, err := net.Listen("unix", testSock)
+	test.Nil(t, err)
+
+	listener, ok := l.(*net.UnixListener)
+	test.Equal(t, ok, true)
+	listener.SetUnlinkOnClose(false)
+	listener.Close() // close explicitly to prevent new connections
+
+	t.Log("sending message with broken socket")
+	topic.PutMessage(msg)
+
+	wg := util.WaitGroupWrapper{}
+	wg.Wrap(func() {
+		err := acceptConnection(l)
+		test.NotNil(t, err)
+		test.Equal(t, err.Error(), noConnErrr.Error())
+	})
+	timedout := waitTimeout(&wg, 50*time.Millisecond)
+	test.Equal(t, timedout, false)
+	err = os.Remove(testSock)
+	test.Nil(t, err)
+
+	t.Log("sending message with no luck, preventing due to statusStartError")
+	l2, err := net.Listen("unix", testSock)
+	test.Nil(t, err)
+
+	wg = util.WaitGroupWrapper{}
+	wg.Wrap(func() {
+		err := acceptConnection(l2)
+		test.NotNil(t, err)
+		test.Equal(t, err.Error(), noConnErrr.Error())
+	})
+	topic.PutMessage(msg)
+	timedout = waitTimeout(&wg, 50*time.Millisecond)
+	test.Equal(t, timedout, true)
 }
 
 func acceptConnection(l net.Listener) error {
