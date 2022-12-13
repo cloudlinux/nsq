@@ -188,7 +188,7 @@ func TestWakeupWithBrokenSocket(t *testing.T) {
 		test.Equal(t, err.Error(), noConnErrr.Error())
 	})
 	topic.PutMessage(msg)
-	timedout = waitTimeout(&wg, 50*time.Millisecond)
+	timedout = waitTimeout(&wg, time.Millisecond)
 	test.Equal(t, timedout, true)
 }
 
