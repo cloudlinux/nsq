@@ -6,12 +6,16 @@ import (
 	"os"
 	"path"
 	"sync"
+	"time"
 )
 
-const socketDir = "/run"
+const (
+	socketDir         = "/run"
+	connectionTimeout = 5 * time.Second
+)
 
 type WakeUp interface {
-	NewMessageInTopic(topic *Topic)
+	NewMessageInChannel(channelName string)
 	Connected(channelName string)
 	Disconnected(channelName string)
 	Loop()
@@ -21,22 +25,19 @@ type wakeup struct {
 	sync.RWMutex
 
 	channels       sync.Map
-	newMessageChan chan *Topic
+	newMessageChan chan string
 	nsqd           *NSQD
 }
 
-var _ WakeUp = &wakeup{}
-
 func newWakeup(nsqd *NSQD) WakeUp {
 	return &wakeup{
-		newMessageChan: make(chan *Topic),
+		newMessageChan: make(chan string, 100),
 		nsqd:           nsqd,
 	}
 }
 
-func (w *wakeup) NewMessageInTopic(topic *Topic) {
-	w.nsqd.logf(LOG_DEBUG, "new message in topic: %s", topic.name)
-	w.newMessageChan <- topic
+func (w *wakeup) NewMessageInChannel(channelName string) {
+	w.newMessageChan <- channelName
 }
 
 func (w *wakeup) Connected(channelName string) {
@@ -50,46 +51,39 @@ func (w *wakeup) Disconnected(channelName string) {
 }
 
 func (w *wakeup) Loop() {
-	var topic *Topic
+	var channelName string
 	w.nsqd.logf(LOG_DEBUG, "wakeup loop is running...")
 	for {
 		select {
 		case <-w.nsqd.exitChan:
 			goto exit
-		case topic = <-w.newMessageChan:
-			w.nsqd.logf(LOG_DEBUG, "new message in topic received: %s", topic.name)
-
-			topic.RLock()
-			var channels []*Channel
-			for _, channel := range topic.channelMap {
-				channels = append(channels, channel)
+		case channelName = <-w.newMessageChan:
+			if !isSocket(channelName) {
+				w.nsqd.logf(LOG_DEBUG, "channel %s has not a socket consumer", channelName)
+				continue
 			}
-			topic.RUnlock()
+			w.nsqd.logf(LOG_DEBUG, "new message in channel received: %s", channelName)
 
-			for _, channel := range channels {
-				if !isSocket(channel.name) {
+			value, ok := w.channels.Load(channelName)
+			if ok {
+				if value == stateSubscribed {
+					w.nsqd.logf(LOG_WARN, "consumer already connected: %s", channelName)
 					continue
-				}
-
-				value, ok := w.channels.Load(channel.name)
-				if ok {
-					if value == stateSubscribed {
-						w.nsqd.logf(LOG_WARN, "consumer already connected: %s", channel.name)
-						continue
-					} else if value == stateInit {
-						w.nsqd.logf(LOG_WARN, "consumer already launched: %s", channel.name)
-						continue
-					}
-				}
-
-				w.nsqd.logf(LOG_DEBUG, "wakeup client: %s", channel.name)
-				err := w.up(channel.name)
-				if err != nil {
-					w.nsqd.logf(LOG_ERROR, "failed to connect to %s: %s", channel.name, err)
+				} else if value == stateInit {
+					w.nsqd.logf(LOG_WARN, "consumer already launched: %s", channelName)
 					continue
 				}
 			}
+
+			w.nsqd.logf(LOG_DEBUG, "starting client: %s", channelName)
+			err := w.up(channelName)
+			if err != nil {
+				w.nsqd.logf(LOG_ERROR, "failed to connect to %s: %s", channelName, err)
+				continue
+			}
+			w.nsqd.logf(LOG_INFO, "client is launched: %s", channelName)
 		}
+		time.Sleep(500 * time.Millisecond)
 	}
 exit:
 	close(w.newMessageChan)
@@ -108,8 +102,6 @@ func isSocket(channelName string) bool {
 
 func (w *wakeup) up(channelName string) error {
 	socketPath := path.Join(socketDir, channelName)
-	w.Lock()
-	defer w.Unlock()
 	err := openConnect(socketPath)
 	if err != nil {
 		return err
@@ -120,7 +112,7 @@ func (w *wakeup) up(channelName string) error {
 }
 
 func openConnect(addr string) error {
-	conn, err := net.Dial("unix", addr)
+	conn, err := net.DialTimeout("unix", addr, connectionTimeout)
 	if err != nil {
 		return err
 	}

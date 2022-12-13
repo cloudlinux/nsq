@@ -32,7 +32,7 @@ func TestConfigFlagParsing(t *testing.T) {
 	options.Resolve(opts, flagSet, cfg)
 	nsqd.New(opts)
 
-	if opts.TLSMinVersion != tls.VersionTLS13 {
+	if opts.TLSMinVersion != tls.VersionTLS10 {
 		t.Errorf("min %#v not expected %#v", opts.TLSMinVersion, tls.VersionTLS10)
 	}
 	if opts.LogLevel != lg.DEBUG {

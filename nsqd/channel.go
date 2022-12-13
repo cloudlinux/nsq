@@ -85,9 +85,9 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 		nsqd:           nsqd,
 		ephemeral:      strings.HasSuffix(channelName, "#ephemeral"),
 	}
-	// channels with a #ordered suffix have mem-queue size of 0
+	// channels with a _ordered suffix have mem-queue size of 0
 	c.memQueueSize = nsqd.getOpts().MemQueueSize
-	if strings.HasSuffix(topicName, "#ordered") {
+	if strings.HasSuffix(topicName, "_ordered") {
 		c.memQueueSize = 0
 	}
 	// avoid mem-queue if size == 0 for more consistent ordering
@@ -306,6 +306,7 @@ func (c *Channel) PutMessage(m *Message) error {
 		return err
 	}
 	atomic.AddUint64(&c.messageCount, 1)
+	c.nsqd.wakeup.NewMessageInChannel(c.name)
 	return nil
 }
 
