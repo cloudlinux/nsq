@@ -38,8 +38,8 @@ type wakeup struct {
 }
 
 type state struct {
-	status  int
-	timeout time.Time
+	status    int
+	timestamp time.Time
 }
 
 func newWakeup(nsqd *NSQD) WakeUp {
@@ -56,23 +56,23 @@ func (w *wakeup) NewMessageInChannel(channelName string) {
 func (w *wakeup) Connected(channelName string) {
 	w.nsqd.logf(LOG_DEBUG, "client is connected: %s", channelName)
 	w.channels.Store(channelName, state{
-		status:  statusConnected,
-		timeout: time.Now(),
+		status:    statusConnected,
+		timestamp: time.Now(),
 	})
 }
 
 func (w *wakeup) Disconnected(channelName string) {
 	w.nsqd.logf(LOG_DEBUG, "client is disconnected: %s", channelName)
 	w.channels.Store(channelName, state{
-		status:  statusDisconnected,
-		timeout: time.Now(),
+		status:    statusDisconnected,
+		timestamp: time.Now(),
 	})
 }
 
 func (w *wakeup) setState(channelName string, status int) {
 	w.channels.Store(channelName, state{
-		status:  status,
-		timeout: time.Now(),
+		status:    status,
+		timestamp: time.Now(),
 	})
 }
 
@@ -100,10 +100,10 @@ func (w *wakeup) Loop() {
 				if s.status == statusConnected {
 					w.nsqd.logf(LOG_WARN, "consumer already connected: %s", channelName)
 					continue
-				} else if s.status == statusInit && time.Now().Sub(s.timeout) < consumerConnectionTimeout {
+				} else if s.status == statusInit && time.Now().Sub(s.timestamp) < consumerConnectionTimeout {
 					w.nsqd.logf(LOG_WARN, "consumer already launched: %s", channelName)
 					continue
-				} else if s.status == statusStartError && time.Now().Sub(s.timeout) < startupTimeout {
+				} else if s.status == statusStartError && time.Now().Sub(s.timestamp) < startupTimeout {
 					w.nsqd.logf(LOG_WARN, "consumer failed, waiting %s: %s", channelName, startupTimeout)
 					continue
 				}
