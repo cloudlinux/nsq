@@ -107,8 +107,8 @@ func freeMemory(w http.ResponseWriter, req *http.Request, ps httprouter.Params) 
 
 func (s *httpServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if !s.tlsEnabled && s.tlsRequired {
-		resp := fmt.Sprintf(`{"message": "TLS_REQUIRED", "https_port": %d}`,
-			s.nsqd.RealHTTPSAddr().Port)
+		resp := fmt.Sprintf(`{"message": "TLS_REQUIRED", "https_addr": %s}`,
+			s.nsqd.RealHTTPSAddr())
 		w.Header().Set("X-NSQ-Content-Type", "nsq; version=1.0")
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(403)
@@ -135,8 +135,8 @@ func (s *httpServer) doInfo(w http.ResponseWriter, req *http.Request, ps httprou
 		Version              string        `json:"version"`
 		BroadcastAddress     string        `json:"broadcast_address"`
 		Hostname             string        `json:"hostname"`
-		HTTPPort             int           `json:"http_port"`
-		TCPPort              int           `json:"tcp_port"`
+		HTTPAddr             string        `json:"http_addr"`
+		TCPAddr              string        `json:"tcp_addr"`
 		StartTime            int64         `json:"start_time"`
 		MaxHeartBeatInterval time.Duration `json:"max_heartbeat_interval"`
 		MaxOutBufferSize     int64         `json:"max_output_buffer_size"`
@@ -146,8 +146,8 @@ func (s *httpServer) doInfo(w http.ResponseWriter, req *http.Request, ps httprou
 		Version:              version.Binary,
 		BroadcastAddress:     s.nsqd.getOpts().BroadcastAddress,
 		Hostname:             hostname,
-		TCPPort:              s.nsqd.RealTCPAddr().Port,
-		HTTPPort:             s.nsqd.RealHTTPAddr().Port,
+		TCPAddr:              s.nsqd.RealTCPAddr().String(),
+		HTTPAddr:             s.nsqd.RealHTTPAddr().String(),
 		StartTime:            s.nsqd.GetStartTime().Unix(),
 		MaxHeartBeatInterval: s.nsqd.getOpts().MaxHeartbeatInterval,
 		MaxOutBufferSize:     s.nsqd.getOpts().MaxOutputBufferSize,
