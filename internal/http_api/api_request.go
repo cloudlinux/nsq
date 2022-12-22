@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -121,7 +120,7 @@ retry:
 
 func httpsEndpoint(endpoint string, body []byte) (string, error) {
 	var forbiddenResp struct {
-		HTTPSPort int `json:"https_port"`
+		HTTPSAddr string `json:"https_addr"`
 	}
 	err := json.Unmarshal(body, &forbiddenResp)
 	if err != nil {
@@ -133,12 +132,7 @@ func httpsEndpoint(endpoint string, body []byte) (string, error) {
 		return "", err
 	}
 
-	host, _, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		return "", err
-	}
-
 	u.Scheme = "https"
-	u.Host = net.JoinHostPort(host, strconv.Itoa(forbiddenResp.HTTPSPort))
+	u.Host = forbiddenResp.HTTPSAddr
 	return u.String(), nil
 }

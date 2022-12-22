@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
@@ -107,8 +108,7 @@ func freeMemory(w http.ResponseWriter, req *http.Request, ps httprouter.Params) 
 
 func (s *httpServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if !s.tlsEnabled && s.tlsRequired {
-		resp := fmt.Sprintf(`{"message": "TLS_REQUIRED", "https_port": %d}`,
-			s.nsqd.RealHTTPSAddr().Port)
+		resp := fmt.Sprintf(`{"message": "TLS_REQUIRED", "https_addr": "%s"}`, s.nsqd.RealHTTPSAddr())
 		w.Header().Set("X-NSQ-Content-Type", "nsq; version=1.0")
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(403)
@@ -131,6 +131,14 @@ func (s *httpServer) doInfo(w http.ResponseWriter, req *http.Request, ps httprou
 	if err != nil {
 		return nil, http_api.Err{500, err.Error()}
 	}
+	tcpAddr, ok := s.nsqd.RealTCPAddr().(*net.TCPAddr)
+	if !ok {
+		return nil, http_api.Err{500, "failed to cast to TCPAddr"}
+	}
+	httpAddr, ok := s.nsqd.RealHTTPAddr().(*net.TCPAddr)
+	if !ok {
+		return nil, http_api.Err{500, "failed to cast to TCPAddr"}
+	}
 	return struct {
 		Version              string        `json:"version"`
 		BroadcastAddress     string        `json:"broadcast_address"`
@@ -146,8 +154,8 @@ func (s *httpServer) doInfo(w http.ResponseWriter, req *http.Request, ps httprou
 		Version:              version.Binary,
 		BroadcastAddress:     s.nsqd.getOpts().BroadcastAddress,
 		Hostname:             hostname,
-		TCPPort:              s.nsqd.RealTCPAddr().Port,
-		HTTPPort:             s.nsqd.RealHTTPAddr().Port,
+		TCPPort:              tcpAddr.Port,
+		HTTPPort:             httpAddr.Port,
 		StartTime:            s.nsqd.GetStartTime().Unix(),
 		MaxHeartBeatInterval: s.nsqd.getOpts().MaxHeartbeatInterval,
 		MaxOutBufferSize:     s.nsqd.getOpts().MaxOutputBufferSize,
