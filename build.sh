@@ -9,6 +9,7 @@
 #     BUILDROOT: target directory for all packaged files (artifacts).
 
 set -e -x
+echo 'Going to cd into directory'
 cd $(dirname $0)
 
 ACTION="$1"
