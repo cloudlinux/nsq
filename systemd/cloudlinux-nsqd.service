@@ -1,0 +1,19 @@
+[Unit]
+Description=Imunify360 cloudlinux nsqd
+Documentation=https://docs.imunify360.com/
+PartOf=imunify360.service
+
+[Service]
+CPUAccounting=true
+MemoryAccounting=true
+BlockIOAccounting=true
+Slice=Imunify-cloudlinux_nsqd.slice
+Environment=GOGC=10
+ExecStart=/usr/sbin/cloudlinux-nsqd
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=
+SuccessExitStatus=0 SIGINT SIGTERM
+
+[Install]
+WantedBy=multi-user.target
