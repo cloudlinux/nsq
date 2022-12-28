@@ -30,6 +30,7 @@ type Options struct {
 	HTTPClientConnectTimeout time.Duration `flag:"http-client-connect-timeout" cfg:"http_client_connect_timeout"`
 	HTTPClientRequestTimeout time.Duration `flag:"http-client-request-timeout" cfg:"http_client_request_timeout"`
 	UseUnixSockets           bool          `flag:"use-unix-sockets" cfg:"use_unix_sockets"`
+	WakeupSocketDir          string        `flag:"wakeup-socket-dir" cfg:"wakeup_socket_dir"`
 
 	// diskqueue options
 	DataPath        string        `flag:"data-path"`
@@ -109,6 +110,7 @@ func NewOptions() *Options {
 		BroadcastAddress:  hostname,
 		BroadcastTCPPort:  0,
 		BroadcastHTTPPort: 0,
+		WakeupSocketDir:   "/var/run/",
 
 		NSQLookupdTCPAddresses: make([]string, 0),
 		AuthHTTPAddresses:      make([]string, 0),

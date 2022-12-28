@@ -18,6 +18,7 @@ var noConnErrr = errors.New("accept unix /tmp/test.sock: use of closed network c
 
 func TestWakeupSuccessfully(t *testing.T) {
 	opts := NewOptions()
+	opts.WakeupSocketDir = "/tmp"
 	opts.Logger = test.NewTestLogger(t)
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
@@ -63,6 +64,7 @@ func TestWakeupSuccessfully(t *testing.T) {
 
 func TestWakeupWithoutRightClient(t *testing.T) {
 	opts := NewOptions()
+	opts.WakeupSocketDir = "/tmp"
 	opts.Logger = test.NewTestLogger(t)
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
@@ -96,6 +98,7 @@ func TestWakeupWithoutRightClient(t *testing.T) {
 
 func TestWakeupWithConnectedClient(t *testing.T) {
 	opts := NewOptions()
+	opts.WakeupSocketDir = "/tmp"
 	opts.Logger = test.NewTestLogger(t)
 	opts.ClientTimeout = 60 * time.Second
 	tcpAddr, _, nsqd := mustStartNSQD(opts)
@@ -139,6 +142,7 @@ func TestWakeupWithConnectedClient(t *testing.T) {
 
 func TestWakeupWithBrokenSocket(t *testing.T) {
 	opts := NewOptions()
+	opts.WakeupSocketDir = "/tmp"
 	opts.Logger = test.NewTestLogger(t)
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
