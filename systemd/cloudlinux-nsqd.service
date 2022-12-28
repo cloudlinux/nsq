@@ -9,7 +9,7 @@ MemoryAccounting=true
 BlockIOAccounting=true
 Slice=Imunify-cloudlinux_nsqd.slice
 Environment=GOGC=10
-ExecStart=/usr/sbin/cloudlinux-nsqd
+ExecStart=/usr/sbin/cloudlinux-nsqd --use-unix-sockets --tcp-address /var/run/nsqd.sock --http-address /var/run/nsqd-http.sock
 Restart=on-failure
 RestartSec=5
 SuccessExitStatus=

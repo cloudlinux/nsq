@@ -43,7 +43,7 @@ start() {
         cd /
         close_fds
         export GOGC=10
-        setsid $exec &
+        setsid $exec --use-unix-sockets --tcp-address /var/run/nsqd.sock --http-address /var/run/nsqd-http.sock &
     )
     success "$prog startup"
     echo
