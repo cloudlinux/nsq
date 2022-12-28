@@ -14,7 +14,7 @@ import (
 	"github.com/nsqio/nsq/internal/util"
 )
 
-var noConnErrr = errors.New("accept unix /run/test.sock: use of closed network connection")
+var noConnErrr = errors.New("accept unix /tmp/test.sock: use of closed network connection")
 
 func TestWakeupSuccessfully(t *testing.T) {
 	opts := NewOptions()
@@ -26,7 +26,7 @@ func TestWakeupSuccessfully(t *testing.T) {
 	topicName := "test_wakeup" + strconv.Itoa(int(time.Now().Unix()))
 	topic := nsqd.GetTopic(topicName)
 
-	testSock := "/run/test.sock"
+	testSock := "/tmp/test.sock"
 	defer os.Remove(testSock)
 
 	// create channel
@@ -74,7 +74,7 @@ func TestWakeupWithoutRightClient(t *testing.T) {
 	// create channel
 	_ = topic.GetChannel("different-channel-name")
 
-	testSock := "/run/test.sock"
+	testSock := "/tmp/test.sock"
 	defer os.Remove(testSock)
 
 	l, err := net.Listen("unix", testSock)
@@ -102,7 +102,7 @@ func TestWakeupWithConnectedClient(t *testing.T) {
 	defer os.RemoveAll(opts.DataPath)
 	defer nsqd.Exit()
 
-	testSock := "/run/test.sock"
+	testSock := "/tmp/test.sock"
 	defer os.Remove(testSock)
 
 	topicName := "test_wakeup" + strconv.Itoa(int(time.Now().Unix()))
@@ -146,7 +146,7 @@ func TestWakeupWithBrokenSocket(t *testing.T) {
 
 	wakeupTested := nsqd.wakeup.(*wakeup)
 
-	testSock := "/run/test.sock"
+	testSock := "/tmp/test.sock"
 	defer os.Remove(testSock)
 
 	topicName := "test_wakeup" + strconv.Itoa(int(time.Now().Unix()))
