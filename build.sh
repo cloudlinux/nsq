@@ -38,7 +38,7 @@ do_build() {
         local version=$(cat build_version)
         go install \
                 -ldflags="-X main.buildVersion=$version" \
-                ./nsqd/...
+                ./apps/nsqd/...
 }
 
 do_install() {
