@@ -26,11 +26,11 @@ do_build() {
                 export GOROOT
         fi
 
-        echo Using $(go version)
+        echo "Using $(go version)"
 
         # ensure GOPATH is set
         if [[ -z "$GOPATH" ]]; then
-                GOPATH="$REPO_ROOT/gohome"
+                GOPATH="$REPO_ROOT/go"
                 mkdir -p "$GOPATH"
                 export GOPATH
         fi
@@ -44,7 +44,7 @@ do_build() {
 do_install() {
         test -n "$BUILDROOT"  # ensure var is set
         if [ -z "$GOPATH" -a -d go ]; then
-                GOPATH="$REPO_ROOT/gohome"
+                GOPATH="$REPO_ROOT/go"
                 export GOPATH
         fi
         SBIN_DIR=${SBIN_DIR:-/usr/sbin}
