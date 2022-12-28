@@ -14,7 +14,7 @@ import (
 	"github.com/nsqio/nsq/internal/util"
 )
 
-var noConnErrr = errors.New("accept unix /tmp/test.sock: use of closed network connection")
+var errNoConn = errors.New("accept unix /tmp/test.sock: use of closed network connection")
 
 func TestWakeupSuccessfully(t *testing.T) {
 	opts := NewOptions()
@@ -55,7 +55,7 @@ func TestWakeupSuccessfully(t *testing.T) {
 	wg = util.WaitGroupWrapper{}
 	wg.Wrap(func() {
 		err := acceptConnection(l)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 
 	timedout = waitTimeout(&wg, 50*time.Millisecond)
@@ -90,7 +90,7 @@ func TestWakeupWithoutRightClient(t *testing.T) {
 	wg := util.WaitGroupWrapper{}
 	wg.Wrap(func() {
 		err := acceptConnection(l)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 	timedout := waitTimeout(&wg, time.Second)
 	test.Equal(t, timedout, true)
@@ -134,7 +134,7 @@ func TestWakeupWithConnectedClient(t *testing.T) {
 	wg := util.WaitGroupWrapper{}
 	wg.Wrap(func() {
 		err := acceptConnection(l)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 	timedout := waitTimeout(&wg, 50*time.Millisecond)
 	test.Equal(t, timedout, true)
@@ -177,7 +177,7 @@ func TestWakeupWithBrokenSocket(t *testing.T) {
 	wg.Wrap(func() {
 		err := acceptConnection(listener)
 		test.NotNil(t, err)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 	timedout := waitTimeout(&wg, 100*time.Millisecond)
 	test.Equal(t, timedout, false)
@@ -214,7 +214,7 @@ func TestWakeupWithBrokenSocket(t *testing.T) {
 	wg1.Wrap(func() {
 		err := acceptConnection(l1)
 		test.NotNil(t, err)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 	timedout = waitTimeout(&wg1, 50*time.Millisecond)
 	test.Equal(t, timedout, true)

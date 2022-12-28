@@ -98,10 +98,10 @@ func (w *wakeup) Loop() {
 				if s.status == statusConnected {
 					w.nsqd.logf(LOG_WARN, "consumer already connected: %s", channelName)
 					continue
-				} else if s.status == statusInit && time.Now().Sub(s.timestamp) < consumerConnectionTimeout {
+				} else if s.status == statusInit && time.Since(s.timestamp) < consumerConnectionTimeout {
 					w.nsqd.logf(LOG_WARN, "consumer already launched: %s", channelName)
 					continue
-				} else if s.status == statusStartError && time.Now().Sub(s.timestamp) < startupTimeout {
+				} else if s.status == statusStartError && time.Since(s.timestamp) < startupTimeout {
 					w.nsqd.logf(LOG_WARN, "consumer failed, waiting %s: %s", channelName, startupTimeout)
 					continue
 				}
