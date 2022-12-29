@@ -4,12 +4,12 @@ build: install-go build-nsqd
 
 install: SBIN_DIR ?= /usr/sbin
 install:
+	mkdir -p "$(DESTDIR)/var/lib/imunify-nsq"
 	mkdir -p "$(DESTDIR)/${SBIN_DIR}"
 	install -m 0755 ${REPO_ROOT}/bin/imunify-nsqd $(DESTDIR)${SBIN_DIR}/imunify-nsqd
 
 install-go: GOVERSION ?= go1.19.1
 install-go:
-	mkdir -p "$(DESTDIR)/var/lib/imunify-nsq"
 	curl -s "https://dl.google.com/go/${GOVERSION}.linux-amd64.tar.gz" | tar xz
 
 build-nsqd:
