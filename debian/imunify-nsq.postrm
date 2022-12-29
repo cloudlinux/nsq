@@ -3,6 +3,6 @@
 set -e
 
 if [ "$1" = "remove" ]; then
-    rm -rf /var/lib/imunify-nsq
+    rm -rf /var/lib/imunify-nsqd
 fi
 #DEBHELPER#

@@ -51,7 +51,7 @@ install -m 644 imunify-nsq.logrotate $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/i
 
 %files
 %{_sbindir}/imunify360-nsqd
-%dir /var/lib/imunify-nsq
+%dir /var/lib/imunify-nsqd
 %config %{_sysconfdir}/logrotate.d/imunify-nsq
 
 %if %{rhel} > 6
@@ -96,7 +96,7 @@ fi
 
 if [ $1 -eq 0 ] ; then
     # uninstall
-    rm -rf /var/lib/imunify-nsq
+    rm -rf /var/lib/imunify-nsqd
 fi
 
 %changelog
