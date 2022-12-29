@@ -1,38 +1,20 @@
-PREFIX=/usr/local
-BINDIR=${PREFIX}/bin
-DESTDIR=
-BLDDIR = build
-BLDFLAGS=
-EXT=
-ifeq (${GOOS},windows)
-    EXT=.exe
-endif
+GOVERSION := go1.19.1
+SHELL := /bin/bash
+REPO_ROOT := $(shell pwd)
+SBIN_DIR ?= /usr/sbin
 
-APPS = nsqd nsqlookupd nsqadmin nsq_to_nsq nsq_to_file nsq_to_http nsq_tail nsq_stat to_nsq
-all: $(APPS)
+export PATH=${REPO_ROOT}/go/bin:$(shell printenv PATH)
+export GOPATH=${REPO_ROOT}/go
 
-$(BLDDIR)/nsqd:        $(wildcard apps/nsqd/*.go       nsqd/*.go       nsq/*.go internal/*/*.go)
-$(BLDDIR)/nsqlookupd:  $(wildcard apps/nsqlookupd/*.go nsqlookupd/*.go nsq/*.go internal/*/*.go)
-$(BLDDIR)/nsqadmin:    $(wildcard apps/nsqadmin/*.go   nsqadmin/*.go nsqadmin/templates/*.go internal/*/*.go)
-$(BLDDIR)/nsq_to_nsq:  $(wildcard apps/nsq_to_nsq/*.go  nsq/*.go internal/*/*.go)
-$(BLDDIR)/nsq_to_file: $(wildcard apps/nsq_to_file/*.go nsq/*.go internal/*/*.go)
-$(BLDDIR)/nsq_to_http: $(wildcard apps/nsq_to_http/*.go nsq/*.go internal/*/*.go)
-$(BLDDIR)/nsq_tail:    $(wildcard apps/nsq_tail/*.go    nsq/*.go internal/*/*.go)
-$(BLDDIR)/nsq_stat:    $(wildcard apps/nsq_stat/*.go             internal/*/*.go)
-$(BLDDIR)/to_nsq:      $(wildcard apps/to_nsq/*.go               internal/*/*.go)
+build: install-go build-nsqd
 
-$(BLDDIR)/%:
-	@mkdir -p $(dir $@)
-	go build ${BLDFLAGS} -o $@ ./apps/$*
+install:
+	mkdir -p "$(DESTDIR)/${SBIN_DIR}"
+	install -m 0755 ${REPO_ROOT}/go/bin/nsqd $(DESTDIR)${SBIN_DIR}/cloudlinux-nsqd
 
-$(APPS): %: $(BLDDIR)/%
+install-go:
+	curl -s "https://dl.google.com/go/${GOVERSION}.linux-amd64.tar.gz" | tar xz
 
-clean:
-	rm -fr $(BLDDIR)
+build-nsqd:
+	go install ./apps/nsqd/...
 
-.PHONY: install clean all
-.PHONY: $(APPS)
-
-install: $(APPS)
-	install -m 755 -d ${DESTDIR}${BINDIR}
-	for APP in $^ ; do install -m 755 ${BLDDIR}/$$APP ${DESTDIR}${BINDIR}/$$APP${EXT} ; done

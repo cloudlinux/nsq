@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -ex
+
+SPEC_NAME=cloudlinux-nsqd
+PKG_VERSION=$(awk '$1 == "Version:" {print $2}' < "${SPEC_NAME}.spec")
+PKG_NAME=$(awk '$1 == "Name:" {print $2}' < "${SPEC_NAME}.spec")
+
+if ! VERSION=$(git describe --tags || git rev-parse HEAD); then
+  VERSION="0"
+fi
+echo $VERSION > build_version
+
+ARCHIVE_NAME=$PKG_NAME-$PKG_VERSION.tar.gz
+
+tar \
+  --create \
+  --auto-compress \
+  --file /tmp/$ARCHIVE_NAME \
+  --exclude .git \
+  --exclude $ARCHIVE_NAME \
+  --transform "s#^\./#$PKG_NAME-$PKG_VERSION/#" \
+  ./
+
+mv /tmp/$ARCHIVE_NAME .
