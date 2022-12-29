@@ -1,5 +1,7 @@
 REPO_ROOT := $(shell pwd)
 
+all: nsqd
+
 build: install-go build-nsqd
 
 install: SBIN_DIR ?= /usr/sbin
