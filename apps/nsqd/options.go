@@ -132,6 +132,7 @@ func nsqdFlagSet(opts *nsqd.Options) *flag.FlagSet {
 	flagSet.String("http-address", opts.HTTPAddress, "<addr>:<port> to listen on for HTTP clients")
 	flagSet.String("tcp-address", opts.TCPAddress, "<addr>:<port> to listen on for TCP clients")
 	flagSet.Bool("use-unix-sockets", opts.UseUnixSockets, "Usinx UNIX sockets instead of IP sockets")
+	flagSet.String("wakeup-socket-dir", opts.WakeupSocketDir, "Directory of sockets to wake up the consumer processes")
 
 	authHTTPAddresses := app.StringArray{}
 	flagSet.Var(&authHTTPAddresses, "auth-http-address", "<addr>:<port> or a full url to query auth server (may be given multiple times)")

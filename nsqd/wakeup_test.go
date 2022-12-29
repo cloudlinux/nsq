@@ -14,10 +14,11 @@ import (
 	"github.com/nsqio/nsq/internal/util"
 )
 
-var noConnErrr = errors.New("accept unix /run/test.sock: use of closed network connection")
+var errNoConn = errors.New("accept unix /tmp/test.sock: use of closed network connection")
 
 func TestWakeupSuccessfully(t *testing.T) {
 	opts := NewOptions()
+	opts.WakeupSocketDir = "/tmp"
 	opts.Logger = test.NewTestLogger(t)
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
@@ -26,7 +27,7 @@ func TestWakeupSuccessfully(t *testing.T) {
 	topicName := "test_wakeup" + strconv.Itoa(int(time.Now().Unix()))
 	topic := nsqd.GetTopic(topicName)
 
-	testSock := "/run/test.sock"
+	testSock := "/tmp/test.sock"
 	defer os.Remove(testSock)
 
 	// create channel
@@ -54,7 +55,7 @@ func TestWakeupSuccessfully(t *testing.T) {
 	wg = util.WaitGroupWrapper{}
 	wg.Wrap(func() {
 		err := acceptConnection(l)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 
 	timedout = waitTimeout(&wg, 50*time.Millisecond)
@@ -63,6 +64,7 @@ func TestWakeupSuccessfully(t *testing.T) {
 
 func TestWakeupWithoutRightClient(t *testing.T) {
 	opts := NewOptions()
+	opts.WakeupSocketDir = "/tmp"
 	opts.Logger = test.NewTestLogger(t)
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
@@ -74,7 +76,7 @@ func TestWakeupWithoutRightClient(t *testing.T) {
 	// create channel
 	_ = topic.GetChannel("different-channel-name")
 
-	testSock := "/run/test.sock"
+	testSock := "/tmp/test.sock"
 	defer os.Remove(testSock)
 
 	l, err := net.Listen("unix", testSock)
@@ -88,7 +90,7 @@ func TestWakeupWithoutRightClient(t *testing.T) {
 	wg := util.WaitGroupWrapper{}
 	wg.Wrap(func() {
 		err := acceptConnection(l)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 	timedout := waitTimeout(&wg, time.Second)
 	test.Equal(t, timedout, true)
@@ -96,13 +98,14 @@ func TestWakeupWithoutRightClient(t *testing.T) {
 
 func TestWakeupWithConnectedClient(t *testing.T) {
 	opts := NewOptions()
+	opts.WakeupSocketDir = "/tmp"
 	opts.Logger = test.NewTestLogger(t)
 	opts.ClientTimeout = 60 * time.Second
 	tcpAddr, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
 	defer nsqd.Exit()
 
-	testSock := "/run/test.sock"
+	testSock := "/tmp/test.sock"
 	defer os.Remove(testSock)
 
 	topicName := "test_wakeup" + strconv.Itoa(int(time.Now().Unix()))
@@ -131,7 +134,7 @@ func TestWakeupWithConnectedClient(t *testing.T) {
 	wg := util.WaitGroupWrapper{}
 	wg.Wrap(func() {
 		err := acceptConnection(l)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 	timedout := waitTimeout(&wg, 50*time.Millisecond)
 	test.Equal(t, timedout, true)
@@ -139,6 +142,7 @@ func TestWakeupWithConnectedClient(t *testing.T) {
 
 func TestWakeupWithBrokenSocket(t *testing.T) {
 	opts := NewOptions()
+	opts.WakeupSocketDir = "/tmp"
 	opts.Logger = test.NewTestLogger(t)
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
@@ -146,7 +150,7 @@ func TestWakeupWithBrokenSocket(t *testing.T) {
 
 	wakeupTested := nsqd.wakeup.(*wakeup)
 
-	testSock := "/run/test.sock"
+	testSock := "/tmp/test.sock"
 	defer os.Remove(testSock)
 
 	topicName := "test_wakeup" + strconv.Itoa(int(time.Now().Unix()))
@@ -173,7 +177,7 @@ func TestWakeupWithBrokenSocket(t *testing.T) {
 	wg.Wrap(func() {
 		err := acceptConnection(listener)
 		test.NotNil(t, err)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 	timedout := waitTimeout(&wg, 100*time.Millisecond)
 	test.Equal(t, timedout, false)
@@ -210,7 +214,7 @@ func TestWakeupWithBrokenSocket(t *testing.T) {
 	wg1.Wrap(func() {
 		err := acceptConnection(l1)
 		test.NotNil(t, err)
-		test.Equal(t, err.Error(), noConnErrr.Error())
+		test.Equal(t, err.Error(), errNoConn.Error())
 	})
 	timedout = waitTimeout(&wg1, 50*time.Millisecond)
 	test.Equal(t, timedout, true)

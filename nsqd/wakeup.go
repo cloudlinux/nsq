@@ -10,8 +10,6 @@ import (
 )
 
 const (
-	socketDir = "/run"
-
 	statusInit = iota
 	statusConnected
 	statusDisconnected
@@ -33,6 +31,7 @@ type wakeup struct {
 	channels       sync.Map
 	newMessageChan chan string
 	nsqd           *NSQD
+	socketDir      string
 }
 
 type state struct {
@@ -40,10 +39,11 @@ type state struct {
 	timestamp time.Time
 }
 
-func newWakeup(nsqd *NSQD) WakeUp {
+func newWakeup(nsqd *NSQD, socketDir string) WakeUp {
 	return &wakeup{
 		newMessageChan: make(chan string, 100),
 		nsqd:           nsqd,
+		socketDir:      socketDir,
 	}
 }
 
@@ -82,7 +82,7 @@ func (w *wakeup) Loop() {
 		case <-w.nsqd.exitChan:
 			goto exit
 		case channelName = <-w.newMessageChan:
-			if !isSocket(channelName) {
+			if !isSocket(w.socketDir, channelName) {
 				w.nsqd.logf(LOG_DEBUG, "channel %s has not a socket consumer", channelName)
 				continue
 			}
@@ -98,10 +98,10 @@ func (w *wakeup) Loop() {
 				if s.status == statusConnected {
 					w.nsqd.logf(LOG_WARN, "consumer already connected: %s", channelName)
 					continue
-				} else if s.status == statusInit && time.Now().Sub(s.timestamp) < consumerConnectionTimeout {
+				} else if s.status == statusInit && time.Since(s.timestamp) < consumerConnectionTimeout {
 					w.nsqd.logf(LOG_WARN, "consumer already launched: %s", channelName)
 					continue
-				} else if s.status == statusStartError && time.Now().Sub(s.timestamp) < startupTimeout {
+				} else if s.status == statusStartError && time.Since(s.timestamp) < startupTimeout {
 					w.nsqd.logf(LOG_WARN, "consumer failed, waiting %s: %s", channelName, startupTimeout)
 					continue
 				}
@@ -123,7 +123,7 @@ exit:
 }
 
 // isSocket returns true if the given path is a socket.
-func isSocket(channelName string) bool {
+func isSocket(socketDir, channelName string) bool {
 	socketPath := path.Join(socketDir, channelName)
 	fileInfo, err := os.Stat(socketPath)
 	if err != nil {
@@ -133,7 +133,7 @@ func isSocket(channelName string) bool {
 }
 
 func (w *wakeup) up(channelName string) error {
-	socketPath := path.Join(socketDir, channelName)
+	socketPath := path.Join(w.socketDir, channelName)
 	err := openConnect(socketPath)
 	if err != nil {
 		return err

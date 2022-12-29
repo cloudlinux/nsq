@@ -204,7 +204,7 @@ func (t *Topic) PutMessage(m *Message) error {
 		return errors.New("exiting")
 	}
 	if channelName, full := t.IsFull(); full {
-		return fmt.Errorf("Topic:channel (%s:%s) diskqueue full", t.name, channelName)
+		return fmt.Errorf("topic:channel (%s:%s) diskqueue full", t.name, channelName)
 	}
 	err := t.put(m)
 	if err != nil {
@@ -227,7 +227,7 @@ func (t *Topic) PutMessages(msgs []*Message) error {
 
 	for i, m := range msgs {
 		if channelName, full := t.IsFull(); full {
-			return fmt.Errorf("Topic:channel (%s:%s) message (%d) diskqueue full",
+			return fmt.Errorf("topic:channel (%s:%s) message (%d) diskqueue full",
 				t.name,
 				channelName,
 				i)

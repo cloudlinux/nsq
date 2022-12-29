@@ -184,7 +184,7 @@ func New(opts *Options) (*NSQD, error) {
 		}
 		opts.StatsdPrefix = prefixWithHost
 	}
-	n.wakeup = newWakeup(n)
+	n.wakeup = newWakeup(n, opts.WakeupSocketDir)
 
 	return n, nil
 }
