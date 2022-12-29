@@ -1,9 +1,9 @@
 %define debug_package %{nil}
 
-Name: cloudlinux-nsqd
+Name: imunify-nsq
 Version: 1.0.1
 Release: 1%{?dist}
-Summary: Imunify360 cloudlinux nsqd
+Summary: Imunify NSQ
 License: CLOUD LINUX LICENSE AGREEMENT
 URL: https://github.com/cloudlinux/nsq
 Source0: %{name}-%{version}.tar.gz
@@ -45,13 +45,14 @@ make install DESTDIR=%{buildroot}
 %endif
 
 %{__mkdir} -p $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d
-install -m 644 cloudlinux-nsqd $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/cloudlinux-nsqd
+install -m 644 imunify-nsq.logrotate $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/imunify-nsq
 
 %check
 
 %files
-%{_sbindir}/cloudlinux-nsqd
-%config %{_sysconfdir}/logrotate.d/cloudlinux-nsqd
+%{_sbindir}/imunify360-nsqd
+%dir /var/lib/imunify-nsq
+%config %{_sysconfdir}/logrotate.d/imunify-nsq
 
 %if %{rhel} > 6
 %license LICENSE
@@ -92,6 +93,11 @@ if [ $1 -ge 1 ] ; then
     service try-restart %{name}
 fi
 %endif
+
+if [ $1 -eq 0 ] ; then
+    # uninstall
+    rm -rf /var/lib/imunify-nsq
+fi
 
 %changelog
 * Mon Dec 26 2022 Mikhail Faraponov <mfaraponov@cloudlinux.com> - 1.0.1-1

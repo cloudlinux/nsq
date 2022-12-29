@@ -1,4 +1,4 @@
-Source: cloudlinux-nsqd
+Source: imunify-nsq
 Maintainer: Nikolay Telepenin <ntelepenin@cloudlinux.com>
 Section: admin
 Priority: extra
@@ -14,7 +14,7 @@ Build-Depends:
   make,
   unzip
 
-Package: cloudlinux-nsqd
+Package: imunify-nsq
 Architecture: any
 Description: NSQ message queue with unix socket listener support
   This service receives and routes messages across services.

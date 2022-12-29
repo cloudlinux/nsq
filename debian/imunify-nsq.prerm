@@ -2,6 +2,6 @@
 set -e
 if [ "$1" = "remove" ]; then
     # remove log directory
-    rm -rf /var/log/imunify360/cloudlinux-nsqd
+    rm -rf /var/log/imunify360/imunify-nsq
 fi
 #DEBHELPER#

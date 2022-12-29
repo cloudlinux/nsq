@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 ### BEGIN INIT INFO
-# Provides:          cloudlinux-nsqd
+# Provides:          imunify-nsq
 # Required-Start:    $syslog
 # Required-Stop:     $syslog
 # Should-Start:      $network
@@ -9,7 +9,7 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: IPv4/IPv6 iptables packets processor.
-# Description:       cloudlinux-nsqd message queue service
+# Description:       imunify-nsq message queue service
 ### END INIT INFO
 
 # lock script execution as recommended by flock manual page
@@ -18,7 +18,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-prog=cloudlinux-nsqd
+prog=imunify-nsqd
 exec=/usr/sbin/$prog
 lockfile=/var/lock/subsys/$prog
 pidfile=/var/run/$prog.pid
@@ -43,7 +43,7 @@ start() {
         cd /
         close_fds
         export GOGC=10
-        setsid $exec --data-path /var/imunify360/ --use-unix-sockets --tcp-address /var/run/nsqd.sock --http-address /var/run/nsqd-http.sock &
+        setsid $exec --data-path /var/lib/imunify-nsq --use-unix-sockets --tcp-address /var/run/imunify-nsqd.sock --http-address /var/run/imunify-nsqd-http.sock &
     )
     success "$prog startup"
     echo

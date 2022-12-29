@@ -1,9 +1,9 @@
-/var/log/imunify360/cloudlinux-nsqd/log.rotate {
+/var/log/imunify360/imunify-nsq/log.rotate {
     missingok
     notifempty
     size 30k
     create 0600 root root
     postrotate
-	service cloudlinux-nsqd restart
+	service imunify-nsq restart
     endscript
 }
