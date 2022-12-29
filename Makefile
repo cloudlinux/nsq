@@ -1,7 +1,5 @@
 REPO_ROOT := $(shell pwd)
 
-all: nsqd
-
 build: install-go build-nsqd
 
 install: SBIN_DIR ?= /usr/sbin
@@ -16,3 +14,5 @@ install-go:
 
 build-nsqd:
 	go/bin/go build -o bin/imunify-nsqd ./apps/nsqd/...
+
+all: nsqd
