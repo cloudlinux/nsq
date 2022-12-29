@@ -1,0 +1,19 @@
+[Unit]
+Description=Imunify nsq
+Documentation=https://docs.imunify360.com/
+PartOf=imunify-antivirus.service
+
+[Service]
+CPUAccounting=true
+MemoryAccounting=true
+BlockIOAccounting=true
+Slice=Imunify-cloudlinux_nsq.slice
+Environment=GOGC=10
+ExecStart=/usr/sbin/imunify-nsqd --data-path /var/lib/imunify-nsqd --use-unix-sockets --tcp-address /var/run/imunify-nsqd.sock --http-address /var/run/imunify-nsqd-http.sock
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=
+SuccessExitStatus=0 SIGINT SIGTERM
+
+[Install]
+WantedBy=multi-user.target
