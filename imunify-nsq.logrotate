@@ -1,0 +1,9 @@
+/var/log/imunify360/imunify-nsq/log.rotate {
+    missingok
+    notifempty
+    size 30k
+    create 0600 root root
+    postrotate
+	service imunify-nsq restart
+    endscript
+}

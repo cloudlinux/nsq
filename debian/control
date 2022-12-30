@@ -1,0 +1,20 @@
+Source: imunify-nsq
+Maintainer: Nikolay Telepenin <ntelepenin@cloudlinux.com>
+Section: admin
+Priority: extra
+Standards-Version: 4.4.1
+Homepage: https://github.com/cloudlinux/nsq
+Build-Depends:
+  autoconf,
+  automake,
+  libtool,
+  bash,
+  curl,
+  dh-systemd | debhelper (>= 9.20160709),
+  make,
+  unzip
+
+Package: imunify-nsq
+Architecture: any
+Description: NSQ message queue with unix socket listener support
+  This service receives and routes messages across services.
