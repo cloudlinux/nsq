@@ -50,7 +50,7 @@ install -m 644 imunify-nsq.logrotate $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/i
 %check
 
 %files
-%{_sbindir}/imunify360-nsqd
+%{_sbindir}/imunify-nsqd
 %dir /var/lib/imunify-nsqd
 %config %{_sysconfdir}/logrotate.d/imunify-nsq
 
