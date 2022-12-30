@@ -15,4 +15,4 @@ install-go:
 build-nsqd:
 	go/bin/go build -o bin/imunify-nsqd ./apps/nsqd/...
 
-all: nsqd
+all:
