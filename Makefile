@@ -8,7 +8,7 @@ install:
 	mkdir -p "$(DESTDIR)${SBIN_DIR}"
 	install -m 0755 ${REPO_ROOT}/bin/imunify-nsqd $(DESTDIR)${SBIN_DIR}/imunify-nsqd
 
-install-go: GOVERSION ?= go1.19.1
+install-go: GOVERSION ?= go1.19.4
 install-go:
 	curl -s "https://dl.google.com/go/${GOVERSION}.linux-amd64.tar.gz" | tar xz
 
