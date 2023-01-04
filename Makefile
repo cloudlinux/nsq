@@ -14,3 +14,10 @@ install-go:
 
 build-nsqd:
 	go/bin/go build -o bin/imunify-nsqd ./apps/nsqd/...
+
+github-release: TARGET ?= nsq-1.2.1-1.linux-amd64.go1.19.1
+github-release:
+	mkdir -p ${TARGET}
+	go build -o ${TARGET}/bin/nsqd ./apps/nsqd/...
+	go build -o ${TARGET}/bin/nsqlookupd ./apps/nsqlookupd/...
+	tar -zcvf ${TARGET}.tar.gz ${TARGET}
