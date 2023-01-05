@@ -20,4 +20,4 @@ require (
 
 replace github.com/judwhite/go-svc => github.com/mreiferson/go-svc v1.2.2-0.20210815184239-7a96e00010f6
 
-replace github.com/nsqio/go-diskqueue => github.com/iseletsk/go-diskqueue v1.2.0
+replace github.com/nsqio/go-diskqueue => github.com/kev1n80/go-diskqueue v1.5.2

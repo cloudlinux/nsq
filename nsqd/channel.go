@@ -112,15 +112,15 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 		}
 		// backend names, for uniqueness, automatically include the topic...
 		backendName := getBackendName(topicName, channelName)
-		c.backend = diskqueue.New(
+		c.backend = diskqueue.NewWithDiskSpace(
 			backendName,
 			nsqd.getOpts().DataPath,
+			nsqd.getOpts().MaxDiskSpace,
 			nsqd.getOpts().MaxBytesPerFile,
 			int32(minValidMsgLength),
 			int32(nsqd.getOpts().MaxMsgSize)+minValidMsgLength,
 			nsqd.getOpts().SyncEvery,
 			nsqd.getOpts().SyncTimeout,
-			nsqd.getOpts().MaxDepth,
 			dqLogf,
 		)
 	}

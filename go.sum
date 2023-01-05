@@ -18,6 +18,8 @@ github.com/iseletsk/go-diskqueue v1.2.0 h1:UJTnlQJXhEGX+eqsU5w9MzzsKWSKQVcHhePh9
 github.com/iseletsk/go-diskqueue v1.2.0/go.mod h1:a21AXIDf/sXdSrkDlJX/trQKuywJVec7ehbruGhV8a8=
 github.com/julienschmidt/httprouter v1.3.0 h1:U0609e9tgbseu3rBINet9P48AI/D3oJs4dN7jwJOQ1U=
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
+github.com/kev1n80/go-diskqueue v1.5.2 h1:tdXTTnKSuUf1i0RtpBddmCIx6GYs7uJz2mdmDU++9Ds=
+github.com/kev1n80/go-diskqueue v1.5.2/go.mod h1:05CecKI1I7B+03qC+RZkEsbxnOtyfvb81dmY7d5Nwe8=
 github.com/mreiferson/go-options v1.0.0 h1:RMLidydGlDWpL+lQTXo0bVIf/XT2CTq7AEJMoz5/VWs=
 github.com/mreiferson/go-options v1.0.0/go.mod h1:zHtCks/HQvOt8ATyfwVe3JJq2PPuImzXINPRTC03+9w=
 github.com/mreiferson/go-svc v1.2.2-0.20210815184239-7a96e00010f6 h1:NbuBXARvEXrYZ1SzN53ZpObeuwGhl1zvs/C+kzCggrQ=

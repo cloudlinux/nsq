@@ -2,7 +2,6 @@ package nsqd
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -33,7 +32,6 @@ type Topic struct {
 	idFactory         *guidFactory
 
 	ephemeral      bool
-	fullCheck      bool
 	deleteCallback func(*Topic)
 	deleter        sync.Once
 
@@ -71,19 +69,18 @@ func NewTopic(topicName string, nsqd *NSQD, deleteCallback func(*Topic)) *Topic 
 			opts := nsqd.getOpts()
 			lg.Logf(opts.Logger, opts.LogLevel, lg.LogLevel(level), f, args...)
 		}
-		t.backend = diskqueue.New(
+		t.backend = diskqueue.NewWithDiskSpace(
 			topicName,
 			nsqd.getOpts().DataPath,
+			nsqd.getOpts().MaxDiskSpace,
 			nsqd.getOpts().MaxBytesPerFile,
 			int32(minValidMsgLength),
 			int32(nsqd.getOpts().MaxMsgSize)+minValidMsgLength,
 			nsqd.getOpts().SyncEvery,
 			nsqd.getOpts().SyncTimeout,
-			nsqd.getOpts().MaxDepth,
 			dqLogf,
 		)
 	}
-	t.fullCheck = !t.ephemeral && nsqd.getOpts().MaxDepth > 0
 	t.waitGroup.Wrap(t.messagePump)
 
 	t.nsqd.Notify(t, !t.ephemeral)
@@ -184,27 +181,12 @@ func (t *Topic) DeleteExistingChannel(channelName string) error {
 	return nil
 }
 
-func (t *Topic) IsFull() (string, bool) {
-	if !t.fullCheck {
-		return "", false
-	}
-	for name, channel := range t.channelMap {
-		if channel.backend.IsFull() {
-			return name, true
-		}
-	}
-	return "", t.backend.IsFull()
-}
-
 // PutMessage writes a Message to the queue
 func (t *Topic) PutMessage(m *Message) error {
 	t.RLock()
 	defer t.RUnlock()
 	if atomic.LoadInt32(&t.exitFlag) == 1 {
 		return errors.New("exiting")
-	}
-	if channelName, full := t.IsFull(); full {
-		return fmt.Errorf("topic:channel (%s:%s) diskqueue full", t.name, channelName)
 	}
 	err := t.put(m)
 	if err != nil {
@@ -226,12 +208,6 @@ func (t *Topic) PutMessages(msgs []*Message) error {
 	messageTotalBytes := 0
 
 	for i, m := range msgs {
-		if channelName, full := t.IsFull(); full {
-			return fmt.Errorf("topic:channel (%s:%s) message (%d) diskqueue full",
-				t.name,
-				channelName,
-				i)
-		}
 		err := t.put(m)
 		if err != nil {
 			atomic.AddUint64(&t.messageCount, uint64(i))
