@@ -250,7 +250,8 @@ func TestMaxBytesPerQueueForChannel(t *testing.T) {
 	atomic.StoreInt32(&nsqd.isLoading, 0)
 
 	topic := nsqd.GetTopic(topicName)
-	topic.GetChannel("long_channel_name")
+	topic.GetChannel("longname")
+	time.Sleep(1 * time.Second)
 	actualSize, err := dirSize(opts.DataPath)
 	if err != nil {
 		panic(err)
@@ -258,12 +259,13 @@ func TestMaxBytesPerQueueForChannel(t *testing.T) {
 
 	for i := 0; i < iterations; i++ {
 		msg := NewMessage(topic.GenerateID(), body)
+		time.Sleep(10 * time.Millisecond)
 		if err := topic.PutMessage(msg); err != nil {
-			panic(err)
+			panic(fmt.Errorf("running %d %w", i, err))
 		}
 	}
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	exitChan <- 1
 	<-doneExitChan
