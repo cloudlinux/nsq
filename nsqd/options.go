@@ -120,7 +120,7 @@ func NewOptions() *Options {
 
 		MemQueueSize:     10000,
 		MaxBytesPerFile:  100 * 1024 * 1024,
-		MaxBytesPerQueue: 0, //no max depth per queue
+		MaxBytesPerQueue: 0, // means no limits per queue
 		SyncEvery:        2500,
 		SyncTimeout:      2 * time.Second,
 

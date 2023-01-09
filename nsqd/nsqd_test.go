@@ -213,15 +213,15 @@ func TestMaxBytesPerQueueForTopic(t *testing.T) {
 }
 
 func TestMaxBytesPerQueueForChannel(t *testing.T) {
-	iterations := 128
+	iterations := 5
 	doneExitChan := make(chan int)
 
 	opts := NewOptions()
 	opts.Logger = test.NewTestLogger(t)
 	opts.MemQueueSize = 0
-	opts.MaxBytesPerFile = 10240
-	opts.MaxBytesPerQueue = opts.MaxBytesPerFile * 4
-	opts.SnappyEnabled = false
+	opts.MaxBytesPerFile = 2048
+	opts.MaxBytesPerQueue = opts.MaxBytesPerFile * 2
+	opts.SnappyEnabled = true
 	body := make([]byte, 1024)
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
@@ -250,11 +250,21 @@ func TestMaxBytesPerQueueForChannel(t *testing.T) {
 	atomic.StoreInt32(&nsqd.isLoading, 0)
 
 	topic := nsqd.GetTopic(topicName)
-	topic.GetChannel(channelName)
+	ch := topic.GetChannel(channelName)
+	go func() {
+		i := 0
+
+		for range ch.backend.ReadChan() {
+			i += 1
+			fmt.Println(i)
+		}
+	}()
 	for i := 0; i < iterations; i++ {
 		msg := NewMessage(topic.GenerateID(), body)
 		topic.PutMessage(msg)
 	}
+
+	time.Sleep(100 * time.Second)
 
 	exitChan <- 1
 	<-doneExitChan
@@ -264,6 +274,8 @@ func TestMaxBytesPerQueueForChannel(t *testing.T) {
 		panic(err)
 	}
 
+	fmt.Println(actualSize)
+	fmt.Println(opts.MaxBytesPerQueue)
 	test.Equal(t, true, actualSize > opts.MaxBytesPerQueue)
 	test.Equal(t, true, actualSize <= 2*opts.MaxBytesPerQueue)
 }
