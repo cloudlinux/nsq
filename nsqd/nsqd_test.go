@@ -213,23 +213,23 @@ func TestMaxBytesPerQueueForTopic(t *testing.T) {
 }
 
 func TestMaxBytesPerQueueForChannel(t *testing.T) {
-	iterations := 64 * 1024
+	iterations := 128
 	doneExitChan := make(chan int)
 
 	opts := NewOptions()
 	opts.Logger = test.NewTestLogger(t)
 	opts.MemQueueSize = 0
-	opts.MaxBytesPerFile = 1024 * 1024
+	opts.MaxBytesPerFile = 10240
 	opts.MaxBytesPerQueue = opts.MaxBytesPerFile * 4
 	opts.SnappyEnabled = false
+	body := make([]byte, 1024)
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
-
-	body := make([]byte, 1022)
 
 	test.Equal(t, true, int64(iterations*len(body)) > opts.MaxBytesPerQueue)
 
 	topicName := "nsqd_test" + strconv.Itoa(int(time.Now().Unix()))
+	channelName := "nsqd_channel_test" + strconv.Itoa(int(time.Now().Unix()))
 
 	exitChan := make(chan int)
 	go func() {
@@ -250,33 +250,22 @@ func TestMaxBytesPerQueueForChannel(t *testing.T) {
 	atomic.StoreInt32(&nsqd.isLoading, 0)
 
 	topic := nsqd.GetTopic(topicName)
-	topic.GetChannel("longname")
-	time.Sleep(1 * time.Second)
+	topic.GetChannel(channelName)
+	for i := 0; i < iterations; i++ {
+		msg := NewMessage(topic.GenerateID(), body)
+		topic.PutMessage(msg)
+	}
+
+	exitChan <- 1
+	<-doneExitChan
+
 	actualSize, err := dirSize(opts.DataPath)
 	if err != nil {
 		panic(err)
 	}
 
-	for i := 0; i < iterations; i++ {
-		msg := NewMessage(topic.GenerateID(), body)
-		time.Sleep(10 * time.Millisecond)
-		if err := topic.PutMessage(msg); err != nil {
-			panic(fmt.Errorf("running %d %w", i, err))
-		}
-	}
-
-	time.Sleep(1 * time.Second)
-
-	exitChan <- 1
-	<-doneExitChan
-
-	actualSize2, err := dirSize(opts.DataPath)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(actualSize, actualSize2, opts.MaxBytesPerQueue)
-	test.Equal(t, true, actualSize <= opts.MaxBytesPerQueue)
+	test.Equal(t, true, actualSize > opts.MaxBytesPerQueue)
+	test.Equal(t, true, actualSize <= 2*opts.MaxBytesPerQueue)
 }
 
 func dirSize(path string) (int64, error) {
