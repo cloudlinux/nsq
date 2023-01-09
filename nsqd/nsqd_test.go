@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync/atomic"
 	"testing"
@@ -155,6 +156,73 @@ func TestStartup(t *testing.T) {
 
 	exitChan <- 1
 	<-doneExitChan
+}
+
+func TestMaxDiskSpace(t *testing.T) {
+	iterations := 2048
+	doneExitChan := make(chan int)
+
+	opts := NewOptions()
+	opts.Logger = test.NewTestLogger(t)
+	opts.MemQueueSize = 0
+	opts.MaxBytesPerFile = 10240
+	opts.MaxDiskSpace = opts.MaxBytesPerFile * 4
+	_, _, nsqd := mustStartNSQD(opts)
+	defer os.RemoveAll(opts.DataPath)
+
+	body := make([]byte, 1024)
+
+	test.Equal(t, true, int64(iterations*len(body)) > opts.MaxDiskSpace)
+
+	topicName := "nsqd_test" + strconv.Itoa(int(time.Now().Unix()))
+
+	exitChan := make(chan int)
+	go func() {
+		<-exitChan
+		nsqd.Exit()
+		doneExitChan <- 1
+	}()
+
+	// verify nsqd metadata shows no topics
+	err := nsqd.PersistMetadata()
+	test.Nil(t, err)
+	atomic.StoreInt32(&nsqd.isLoading, 1)
+	nsqd.GetTopic(topicName) // will not persist if `flagLoading`
+	m, err := getMetadata(nsqd)
+	test.Nil(t, err)
+	test.Equal(t, 0, len(m.Topics))
+	nsqd.DeleteExistingTopic(topicName)
+	atomic.StoreInt32(&nsqd.isLoading, 0)
+
+	topic := nsqd.GetTopic(topicName)
+	for i := 0; i < iterations; i++ {
+		msg := NewMessage(topic.GenerateID(), body)
+		topic.PutMessage(msg)
+	}
+
+	exitChan <- 1
+	<-doneExitChan
+
+	actualSize, err := dirSize(opts.DataPath)
+	if err != nil {
+		panic(err)
+	}
+
+	test.Equal(t, true, actualSize <= opts.MaxDiskSpace)
+}
+
+func dirSize(path string) (int64, error) {
+	var size int64
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
 }
 
 func TestEphemeralTopicsAndChannels(t *testing.T) {
