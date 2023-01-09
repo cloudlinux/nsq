@@ -72,7 +72,7 @@ func NewTopic(topicName string, nsqd *NSQD, deleteCallback func(*Topic)) *Topic 
 		t.backend = diskqueue.NewWithDiskSpace(
 			topicName,
 			nsqd.getOpts().DataPath,
-			nsqd.getOpts().MaxDiskSpace,
+			nsqd.getOpts().MaxBytesPerQueue,
 			nsqd.getOpts().MaxBytesPerFile,
 			int32(minValidMsgLength),
 			int32(nsqd.getOpts().MaxMsgSize)+minValidMsgLength,

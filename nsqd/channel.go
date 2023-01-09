@@ -115,7 +115,7 @@ func NewChannel(topicName string, channelName string, nsqd *NSQD,
 		c.backend = diskqueue.NewWithDiskSpace(
 			backendName,
 			nsqd.getOpts().DataPath,
-			nsqd.getOpts().MaxDiskSpace,
+			nsqd.getOpts().MaxBytesPerQueue,
 			nsqd.getOpts().MaxBytesPerFile,
 			int32(minValidMsgLength),
 			int32(nsqd.getOpts().MaxMsgSize)+minValidMsgLength,

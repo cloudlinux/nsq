@@ -43,7 +43,7 @@ start() {
         cd /
         close_fds
         export GOGC=10
-        setsid $exec --data-path /var/lib/imunify-nsqd --max-disk-space 104857600 --use-unix-sockets --tcp-address /var/run/imunify-nsqd.sock --http-address /var/run/imunify-nsqd-http.sock &
+        setsid $exec --data-path /var/lib/imunify-nsqd --max-bytes-per-queue 104857600 --use-unix-sockets --tcp-address /var/run/imunify-nsqd.sock --http-address /var/run/imunify-nsqd-http.sock &
     )
     success "$prog startup"
     echo

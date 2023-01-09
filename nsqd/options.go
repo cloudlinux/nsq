@@ -33,12 +33,12 @@ type Options struct {
 	WakeupSocketDir          string        `flag:"wakeup-socket-dir" cfg:"wakeup_socket_dir"`
 
 	// diskqueue options
-	DataPath        string        `flag:"data-path"`
-	MemQueueSize    int64         `flag:"mem-queue-size"`
-	MaxBytesPerFile int64         `flag:"max-bytes-per-file"`
-	MaxDiskSpace    int64         `flag:"max-disk-space"`
-	SyncEvery       int64         `flag:"sync-every"`
-	SyncTimeout     time.Duration `flag:"sync-timeout"`
+	DataPath         string        `flag:"data-path"`
+	MemQueueSize     int64         `flag:"mem-queue-size"`
+	MaxBytesPerFile  int64         `flag:"max-bytes-per-file"`
+	MaxBytesPerQueue int64         `flag:"max-bytes-per-queue"`
+	SyncEvery        int64         `flag:"sync-every"`
+	SyncTimeout      time.Duration `flag:"sync-timeout"`
 
 	QueueScanInterval        time.Duration
 	QueueScanRefreshInterval time.Duration
@@ -118,11 +118,11 @@ func NewOptions() *Options {
 		HTTPClientConnectTimeout: 2 * time.Second,
 		HTTPClientRequestTimeout: 5 * time.Second,
 
-		MemQueueSize:    10000,
-		MaxBytesPerFile: 100 * 1024 * 1024,
-		MaxDiskSpace:    0, //no max depth per queue
-		SyncEvery:       2500,
-		SyncTimeout:     2 * time.Second,
+		MemQueueSize:     10000,
+		MaxBytesPerFile:  100 * 1024 * 1024,
+		MaxBytesPerQueue: 0, //no max depth per queue
+		SyncEvery:        2500,
+		SyncTimeout:      2 * time.Second,
 
 		QueueScanInterval:        100 * time.Millisecond,
 		QueueScanRefreshInterval: 5 * time.Second,
