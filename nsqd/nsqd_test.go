@@ -167,6 +167,7 @@ func TestMaxBytesPerQueueForTopic(t *testing.T) {
 	opts.MemQueueSize = 0
 	opts.MaxBytesPerFile = 10240
 	opts.MaxBytesPerQueue = opts.MaxBytesPerFile * 4
+	opts.DeflateEnabled = false
 	opts.SnappyEnabled = false
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
@@ -184,21 +185,12 @@ func TestMaxBytesPerQueueForTopic(t *testing.T) {
 		doneExitChan <- 1
 	}()
 
-	// verify nsqd metadata shows no topics
-	err := nsqd.PersistMetadata()
-	test.Nil(t, err)
-	atomic.StoreInt32(&nsqd.isLoading, 1)
-	nsqd.GetTopic(topicName) // will not persist if `flagLoading`
-	m, err := getMetadata(nsqd)
-	test.Nil(t, err)
-	test.Equal(t, 0, len(m.Topics))
-	nsqd.DeleteExistingTopic(topicName)
-	atomic.StoreInt32(&nsqd.isLoading, 0)
-
 	topic := nsqd.GetTopic(topicName)
 	for i := 0; i < iterations; i++ {
 		msg := NewMessage(topic.GenerateID(), body)
-		topic.PutMessage(msg)
+		if err := topic.PutMessage(msg); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	exitChan <- 1
@@ -206,14 +198,14 @@ func TestMaxBytesPerQueueForTopic(t *testing.T) {
 
 	actualSize, err := dirSize(opts.DataPath)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	test.Equal(t, true, actualSize <= opts.MaxBytesPerQueue)
 }
 
 func TestMaxBytesPerQueueForChannel(t *testing.T) {
-	iterations := 5
+	iterations := 2048
 	doneExitChan := make(chan int)
 
 	opts := NewOptions()
@@ -221,8 +213,8 @@ func TestMaxBytesPerQueueForChannel(t *testing.T) {
 	opts.MemQueueSize = 0
 	opts.MaxBytesPerFile = 2048
 	opts.MaxBytesPerQueue = opts.MaxBytesPerFile * 2
-	opts.SnappyEnabled = true
-	body := make([]byte, 1024)
+	body := make([]byte, 128)
+
 	_, _, nsqd := mustStartNSQD(opts)
 	defer os.RemoveAll(opts.DataPath)
 
@@ -238,45 +230,23 @@ func TestMaxBytesPerQueueForChannel(t *testing.T) {
 		doneExitChan <- 1
 	}()
 
-	// verify nsqd metadata shows no topics
-	err := nsqd.PersistMetadata()
-	test.Nil(t, err)
-	atomic.StoreInt32(&nsqd.isLoading, 1)
-	nsqd.GetTopic(topicName) // will not persist if `flagLoading`
-	m, err := getMetadata(nsqd)
-	test.Nil(t, err)
-	test.Equal(t, 0, len(m.Topics))
-	nsqd.DeleteExistingTopic(topicName)
-	atomic.StoreInt32(&nsqd.isLoading, 0)
-
 	topic := nsqd.GetTopic(topicName)
-	ch := topic.GetChannel(channelName)
-	go func() {
-		i := 0
-
-		for range ch.backend.ReadChan() {
-			i += 1
-			fmt.Println(i)
-		}
-	}()
+	topic.GetChannel(channelName) // creates channel
 	for i := 0; i < iterations; i++ {
 		msg := NewMessage(topic.GenerateID(), body)
-		topic.PutMessage(msg)
+		if err := topic.PutMessage(msg); err != nil {
+			t.Fatal(err)
+		}
 	}
-
-	time.Sleep(100 * time.Second)
 
 	exitChan <- 1
 	<-doneExitChan
 
 	actualSize, err := dirSize(opts.DataPath)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
-	fmt.Println(actualSize)
-	fmt.Println(opts.MaxBytesPerQueue)
-	test.Equal(t, true, actualSize > opts.MaxBytesPerQueue)
 	test.Equal(t, true, actualSize <= 2*opts.MaxBytesPerQueue)
 }
 
