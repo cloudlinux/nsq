@@ -1,6 +1,7 @@
 package nsqd
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -238,6 +239,55 @@ func TestMaxBytesPerQueueForChannel(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+
+	exitChan <- 1
+	<-doneExitChan
+
+	actualSize, err := dirSize(opts.DataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	test.Equal(t, true, actualSize <= 2*opts.MaxBytesPerQueue)
+}
+
+func TestMaxBytesPerQueueOldMessagesDeletedInABatch(t *testing.T) {
+	iterations := 3
+	doneExitChan := make(chan int)
+
+	opts := NewOptions()
+	opts.Logger = test.NewTestLogger(t)
+	opts.MemQueueSize = 0
+	opts.MaxBytesPerFile = 2048
+	opts.MaxBytesPerQueue = opts.MaxBytesPerFile * 2
+	body := make([]byte, 128)
+
+	_, _, nsqd := mustStartNSQD(opts)
+	defer os.RemoveAll(opts.DataPath)
+
+	topicName := "nsqd_test" + strconv.Itoa(int(time.Now().Unix()))
+
+	exitChan := make(chan int)
+	go func() {
+		<-exitChan
+		nsqd.Exit()
+		doneExitChan <- 1
+	}()
+	topic := nsqd.GetTopic(topicName)
+
+	for i := 0; i < iterations; i++ {
+		for j := 0; j < int(opts.MaxBytesPerFile)/len(body); j += 1 {
+			binary.BigEndian.PutUint64(body, uint64(i))
+			msg := NewMessage(topic.GenerateID(), body)
+			if err := topic.PutMessage(msg); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	msg := <-topic.backend.ReadChan()
+	test.NotEqual(t, binary.BigEndian.Uint64(msg[26:]), 0)
+	test.Equal(t, binary.BigEndian.Uint64(msg[26:]), uint64(1))
 
 	exitChan <- 1
 	<-doneExitChan
