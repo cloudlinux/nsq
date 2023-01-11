@@ -9,7 +9,7 @@ MemoryAccounting=true
 BlockIOAccounting=true
 Slice=Imunify-cloudlinux_nsq.slice
 Environment=GOGC=10
-ExecStart=/usr/sbin/imunify-nsqd --max-bytes-per-queue 104857600 --data-path /var/lib/imunify-nsqd --use-unix-sockets --tcp-address /var/run/imunify-nsqd.sock --http-address /var/run/imunify-nsqd-http.sock
+ExecStart=/usr/sbin/imunify-nsqd --max-bytes-per-queue 104857600 --max-bytes-per-file 10485760 --data-path /var/lib/imunify-nsqd --use-unix-sockets --tcp-address /var/run/imunify-nsqd.sock --http-address /var/run/imunify-nsqd-http.sock
 Restart=on-failure
 RestartSec=5
 SuccessExitStatus=
