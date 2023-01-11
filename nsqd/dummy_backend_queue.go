@@ -31,7 +31,3 @@ func (d *dummyBackendQueue) Depth() int64 {
 func (d *dummyBackendQueue) Empty() error {
 	return nil
 }
-
-func (d *dummyBackendQueue) IsFull() bool {
-	return false
-}
