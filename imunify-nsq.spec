@@ -96,7 +96,7 @@ fi
 
 if [ $1 -eq 0 ] ; then
     # uninstall
-    rm -rf /var/lib/imunify-nsqd
+    rm -rf /var/run/imunify-nsqd.sock
 fi
 
 %changelog

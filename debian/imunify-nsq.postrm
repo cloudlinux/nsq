@@ -4,5 +4,6 @@ set -e
 
 if [ "$1" = "remove" ]; then
     rm -rf /var/lib/imunify-nsqd
+    rm -rf /var/run/imunify-nsqd.sock
 fi
 #DEBHELPER#
