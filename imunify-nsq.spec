@@ -97,6 +97,7 @@ fi
 if [ $1 -eq 0 ] ; then
     # uninstall
     rm -rf /var/run/imunify-nsqd.sock
+    rm -rf /var/run/imunify-nsqd-http.sock
 fi
 
 %changelog
