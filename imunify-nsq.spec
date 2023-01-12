@@ -66,6 +66,7 @@ install -m 644 imunify-nsq.logrotate $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/i
 %post
 %if %{rhel} > 6
 %systemd_post %{name}.service
+systemctl enable %{name}.service
 %else
 if [ $1 -eq 1 ] ; then
     # Initial installation
