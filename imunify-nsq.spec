@@ -101,6 +101,6 @@ fi
 
 %changelog
 * Tue Jan 17 2023 Mikhail Faraponov <mfaraponov@cloudlinux.com> - 1.0.1-2
-- Added pidfile support
+- Added pidfile support for CentOS6 init.d service
 * Mon Dec 26 2022 Mikhail Faraponov <mfaraponov@cloudlinux.com> - 1.0.1-1
 - Initial release

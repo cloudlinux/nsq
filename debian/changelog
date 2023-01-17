@@ -1,6 +1,6 @@
 imunify-nsq (1.0.1-2) stable; urgency=low
 
-  * Added pidfile support
+  * Added pidfile support for CentOS6 init.d service
 
  -- Mikhail Faraponov <mfaraponov@cloudlinux.com>  Tue, 17 Jan 2023 13:18:59 +0200
 
