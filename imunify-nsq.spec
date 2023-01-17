@@ -2,7 +2,7 @@
 
 Name: imunify-nsq
 Version: 1.0.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: Imunify NSQ
 License: CLOUD LINUX LICENSE AGREEMENT
 URL: https://github.com/cloudlinux/nsq
@@ -100,5 +100,7 @@ if [ $1 -eq 0 ] ; then
 fi
 
 %changelog
+* Tue Jan 17 2023 Mikhail Faraponov <mfaraponov@cloudlinux.com> - 1.0.1-2
+- Added pidfile support
 * Mon Dec 26 2022 Mikhail Faraponov <mfaraponov@cloudlinux.com> - 1.0.1-1
 - Initial release

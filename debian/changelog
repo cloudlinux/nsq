@@ -1,3 +1,9 @@
+imunify-nsq (1.0.1-2) stable; urgency=low
+
+  * Added pidfile support
+
+ -- Mikhail Faraponov <mfaraponov@cloudlinux.com>  Tue, 17 Jan 2023 13:18:59 +0200
+
 imunify-nsq (1.0.1-1) stable; urgency=low
 
   * Initial release
