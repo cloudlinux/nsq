@@ -31,6 +31,7 @@ type Options struct {
 	HTTPClientRequestTimeout time.Duration `flag:"http-client-request-timeout" cfg:"http_client_request_timeout"`
 	UseUnixSockets           bool          `flag:"use-unix-sockets" cfg:"use_unix_sockets"`
 	WakeupSocketDir          string        `flag:"wakeup-socket-dir" cfg:"wakeup_socket_dir"`
+	PIDFile                  string        `flag:"pidfile" cfg:"pidfile"`
 
 	// diskqueue options
 	DataPath         string        `flag:"data-path"`

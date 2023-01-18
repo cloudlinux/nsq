@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -19,8 +20,9 @@ import (
 )
 
 type program struct {
-	once sync.Once
-	nsqd *nsqd.NSQD
+	once    sync.Once
+	nsqd    *nsqd.NSQD
+	onClose func()
 }
 
 func main() {
@@ -55,6 +57,14 @@ func (p *program) Init(env svc.Environment) error {
 
 	options.Resolve(opts, flagSet, cfg)
 
+	p.onClose = func() {}
+	if opts.PIDFile != "" {
+		os.WriteFile(opts.PIDFile, []byte(strconv.Itoa(os.Getpid())), 0644)
+		p.onClose = func() {
+			os.Remove(opts.PIDFile)
+		}
+	}
+
 	nsqd, err := nsqd.New(opts)
 	if err != nil {
 		logFatal("failed to instantiate nsqd - %s", err)
@@ -88,6 +98,7 @@ func (p *program) Start() error {
 func (p *program) Stop() error {
 	p.once.Do(func() {
 		p.nsqd.Exit()
+		p.onClose()
 	})
 	return nil
 }
